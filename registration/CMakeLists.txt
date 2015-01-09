@@ -41,6 +41,9 @@ if(build)
         "include/pcl/${SUBSYS_NAME}/elch.h"
         "include/pcl/${SUBSYS_NAME}/ndt.h"
         "include/pcl/${SUBSYS_NAME}/ndt_2d.h"
+        "include/pcl/${SUBSYS_NAME}/pbmap/planar_patch.h"
+        "include/pcl/${SUBSYS_NAME}/pbmap/pbmap.h"
+        #"include/pcl/${SUBSYS_NAME}/pbmap/pbmap_registration.h"
         "include/pcl/${SUBSYS_NAME}/ppf_registration.h"
 
         "include/pcl/${SUBSYS_NAME}/impl/pairwise_graph_registration.hpp"
@@ -145,6 +148,8 @@ if(build)
         src/lum.cpp
         src/ndt.cpp
         src/ndt_2d.cpp
+        src/pbmap/planar_patch.cpp
+        src/pbmap/pbmap.cpp
         src/transformation_estimation_2D.cpp
         src/transformation_estimation_svd.cpp
         src/transformation_estimation_svd_scale.cpp
