@@ -56,6 +56,12 @@ namespace pcl
       using PlanarPolygon<PointT>::contour_;
       using PlanarPolygon<PointT>::coefficients_;
 
+//      using Region3D<PointT>::getCentroid;
+//      using Region3D<PointT>::getCovariance;
+//      using Region3D<PointT>::getCount;
+//      using PlanarPolygon<PointT>::getContour;
+//      using PlanarPolygon<PointT>::getCoefficients;
+
     public:
       /** \brief Empty constructor for PlanarRegion. */
       PlanarRegion () : contour_labels_ ()
@@ -68,11 +74,16 @@ namespace pcl
       PlanarRegion (const pcl::Region3D<PointT>& region, const pcl::PlanarPolygon<PointT>& polygon) :
         contour_labels_ ()
       {
-        centroid_ = region.centroid;
-        covariance_ = region.covariance;
-        count_ = region.count;
-        contour_ = polygon.contour;
-        coefficients_ = polygon.coefficients;
+//        centroid_ = region.centroid;
+//        covariance_ = region.covariance;
+//        count_ = region.count;
+//        contour_ = polygon.contour;
+//        coefficients_ = polygon.coefficients;
+        centroid_ = region.getCentroid ();
+        covariance_ = region.getCovariance ();
+        count_ = region.getCount ();
+        contour_ = polygon.getContour ();
+        coefficients_ = polygon.getCoefficients ();
       }
       
       /** \brief Destructor. */

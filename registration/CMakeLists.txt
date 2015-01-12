@@ -1,6 +1,6 @@
 set(SUBSYS_NAME registration)
 set(SUBSYS_DESC "Point cloud registration library")
-set(SUBSYS_DEPS common octree kdtree search sample_consensus features filters)
+set(SUBSYS_DEPS common octree kdtree search sample_consensus features filters segmentation geometry)
 
 set(build TRUE)
 PCL_SUBSYS_OPTION(build "${SUBSYS_NAME}" "${SUBSYS_DESC}" ON)
@@ -43,7 +43,6 @@ if(build)
         "include/pcl/${SUBSYS_NAME}/ndt_2d.h"
         "include/pcl/${SUBSYS_NAME}/pbmap/planar_patch.h"
         "include/pcl/${SUBSYS_NAME}/pbmap/pbmap.h"
-        #"include/pcl/${SUBSYS_NAME}/pbmap/pbmap_registration.h"
         "include/pcl/${SUBSYS_NAME}/ppf_registration.h"
 
         "include/pcl/${SUBSYS_NAME}/impl/pairwise_graph_registration.hpp"
@@ -165,7 +164,7 @@ if(build)
     set(LIB_NAME "pcl_${SUBSYS_NAME}")
     include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
     PCL_ADD_LIBRARY("${LIB_NAME}" "${SUBSYS_NAME}" ${srcs} ${incs} ${impl_incs})
-    target_link_libraries("${LIB_NAME}" pcl_kdtree pcl_search pcl_sample_consensus pcl_features pcl_filters)
+    target_link_libraries("${LIB_NAME}" pcl_kdtree pcl_search pcl_sample_consensus pcl_features pcl_filters pcl_segmentation)
     PCL_MAKE_PKGCONFIG("${LIB_NAME}" "${SUBSYS_NAME}" "${SUBSYS_DESC}"
       "${SUBSYS_DEPS}" "" "" "" "")
     # Install include files

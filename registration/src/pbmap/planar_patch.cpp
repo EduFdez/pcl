@@ -38,7 +38,7 @@
  */
 
 //#include <pcl/registration/pbmap/pbmap.h>
-#include <pcl/registration/pbmap/pbmap.h>
+#include <pcl/registration/pbmap/planar_patch.h>
 
 //#include <boost/archive/text_iarchive.hpp>
 //#include <boost/archive/text_oarchive.hpp>
@@ -53,9 +53,26 @@
 //#include <pcl/filters/voxel_grid.h>
 //#include <pcl/surface/convex_hull.h>
 
-////using namespace std;
-////using namespace pcl;
+//using pcl::Region3D<PointT>::centroid_;
+//using Region3D<PointT>::covariance_;
+//using Region3D<PointT>::count_;
+//using PlanarPolygon<PointT>::contour_;
+//using PlanarPolygon<PointT>::coefficients_;
 
+/** \brief Normalize plane's coefficients, that is, make the plane coefficients {A,B,C} in ( Ax+By+Cz+D=0 )coincide with the normal vector
+ */
+//void
+//NormalizePlaneCoefs ()
+//{
+//    //float normABC = centroid_[0];
+//    float normABC = sqrt(coefficients_[0]*coefficients_[0] + coefficients_[1]*coefficients_[1] + coefficients_[2]*coefficients_[2]);
+//    coefficients_[0] /= normABC;
+//    coefficients_[1] /= normABC;
+//    coefficients_[2] /= normABC;
+//}
+
+/** \brief Force the 3D points of the plane to actually lay on the plane
+ */
 //void
 //Plane::forcePtsLayOnPlane()
 //{

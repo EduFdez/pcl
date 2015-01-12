@@ -46,6 +46,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <map>
 
 #include <Eigen/Dense>
 
@@ -73,7 +74,7 @@ namespace pcl
     * \ingroup registration
     */
     template <typename PointT>
-    class PlanarPatch : public pcl::segmentation::PlanarRegion<PointT>
+    class PlanarPatch : public pcl::PlanarRegion<PointT>
     {
       private:
 
@@ -131,11 +132,12 @@ namespace pcl
         /** \brief Standard deviation of the dominant colour. */
         Eigen::Vector3f v_normalized_rgb_dev_;
         /** \brief Histogram of the Hue values, implemented following the paper:
-         * "Utilizing color information in 3d scan registration using planar-patches matching" K. Pathak et a. 2012.
-         */
+         * "Utilizing color information in 3d scan registration using planar-patches matching" K. Pathak et a. 2012. */
         std::vector<float> hue_histogram_;
 
-        pcl::PointCloud<PointT>::Ptr patch_points_;
+        /** \brief The segmented points on the planar patch. */
+//        pcl::PointCloud<PointT> patch_points_;
+        typename pcl::PointCloud<PointT>::Ptr patch_points_;
         //std::vector<int32_t> inliers;
 
 //        /**!
@@ -144,7 +146,7 @@ namespace pcl
 //        std::vector<int32_t> inliers;
 //        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr polygonContourPtr;
 //        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr outerPolygonPtr; // This is going to be deprecated
-//        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr planePointCloudPtr; // This is going to be deprecated
+//        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr patch_points_; // This is going to be deprecated
 
       protected:
         using Region3D<PointT>::centroid_;
@@ -152,14 +154,19 @@ namespace pcl
         using Region3D<PointT>::count_;
         using PlanarPolygon<PointT>::contour_;
         using PlanarPolygon<PointT>::coefficients_;
+//        using PlanarRegion<PointT>::centroid_;
+//        using PlanarRegion<PointT>::covariance_;
+//        using PlanarRegion<PointT>::count_;
+//        using PlanarRegion<PointT>::contour_;
+//        using PlanarRegion<PointT>::coefficients_;
 
       public:
 
         /** \brief Empty constructor. */
-        Plane () :
-            elongation (1.0),
-            b_real_boundary (false),
-            b_scene_structure (false)
+        PlanarPatch () :
+            elongation_ (1.0),
+            b_real_boundary_ (false),
+            b_scene_structure_ (false)
             //convex_hull (new PointCloud<PointXYZRGBA>),
 //            points (new PointCloud<PointXYZRGBA>)
         {
@@ -168,33 +175,54 @@ namespace pcl
         /** \brief Constructor for PlanarPatch region from a PlanarRegion
           * \param[in] planar_region a PlanarRegion for the input data
           */
-        Plane (const PlanarRegion<PointT> &planar_region) :
-            elongation (1.0),
-            b_real_boundary (false),
-            b_scene_structure (false)
+        PlanarPatch (const PlanarRegion<PointT> &planar_region) :
+            elongation_ (1.0),
+            b_real_boundary_ (false),
+            b_scene_structure_ (false)
         {
-            centroid_ = planar_region.centroid;
-            covariance_ = planar_region.covariance;
-            count_ = planar_region.count;
-            contour_ = planar_region.contour;
-            coefficients_ = planar_region.coefficients;
+            centroid_   = planar_region.getCentroid ();
+            covariance_ = planar_region.getCovariance ();
+            count_      = planar_region.getCount ();
+            contour_    = planar_region.getContour ();
+            coefficients_ = planar_region.getCoefficients ();
         }
 
         /** \brief Normalize plane's coefficients, that is, make the plane coefficients {A,B,C} in ( Ax+By+Cz+D=0 )coincide with the normal vector
          */
         void
-        NormalizePlaneCoefs ();
+        NormalizePlaneCoefs ()
+        {
+            float normABC = sqrt(coefficients_[0]*coefficients_[0] + coefficients_[1]*coefficients_[1] + coefficients_[2]*coefficients_[2]);
+            coefficients_[0] /= normABC;
+            coefficients_[1] /= normABC;
+            coefficients_[2] /= normABC;
+        };
 
         /** \brief Force the 3D points of the plane to actually lay on the plane
          */
         void
-        forcePtsLayOnPlane ();
+        forcePtsLayOnPlane ()
+        {
+          assert(coefficients_[0]*coefficients_[0] + coefficients_[1]*coefficients_[1] + coefficients_[2]*coefficients_[2] == 1.f);
 
-//        /** \brief Add point simultaneously to octree and input point cloud. A corresponding index will be added to the indices vector.
-//         * \param[in] point_arg point to be added
-//         * \param[in] cloud_arg pointer to input point cloud dataset (given by \a setInputCloud)
-//         * \param[in] indices_arg pointer to indices vector of the dataset (given by \a setInputCloud)
-//         */
+          // The plane equation has the form Ax + By + Cz + D = 0, where the vector N=(A,B,C) is the normal and the constant D can be calculated as D = -N*(PlanePoint) = -N*PlaneCenter.
+          // The vector of coefficients stores (A,B,C,D)
+          for(unsigned i = 0; i < patch_points_->size(); i++)
+          {
+            double dist = coefficients_[0]*patch_points_->points[i].x + coefficients_[1]*patch_points_->points[i].y + coefficients_[2]*patch_points_->points[i].z + coefficients_[3];
+            patch_points_->points[i].x -= coefficients_[0] * dist;
+            patch_points_->points[i].y -= coefficients_[1] * dist;
+            patch_points_->points[i].z -= coefficients_[2] * dist;
+          }
+          // Do the same with the points defining the convex hull
+          for(unsigned i = 0; i < contour_.size(); i++)
+          {
+            double dist = coefficients_[0]*contour_[i].x + coefficients_[1]*contour_[i].y + coefficients_[2]*contour_[i].z + coefficients_[3];
+            contour_[i].x -= coefficients_[0] * dist;
+            contour_[i].y -= coefficients_[1] * dist;
+            contour_[i].z -= coefficients_[2] * dist;
+          }
+        };
 
 
 //        /** \brief Calculate the plane's convex hull with the monotone chain algorithm.
@@ -204,20 +232,54 @@ namespace pcl
 //        void
 //        calcConvexHull (PointCloud<PointXYZRGBA>::Ptr &cloud_arg, std::vector<size_t> &indices_arg = DEFAULT_VECTOR );
 
-        /** \brief Compute the patch's gravity center
-          */
-        void
-        computeCenter ();
+//        /** \brief Compute the patch's center (the gravity center of its convex hull)
+//          */
+//        void
+//        computeCenter ()
+//        {
+
+//        };
 
         /** \brief Calculate plane's elongation and principal direction
           */
         void
-        calcElongationAndPpalDir ();
-
+        calcElongationAndPpalDir ()
+        {
+          // Covariance matrix of the patch's area distribution. See www.wikihow.com/Sample/Area-of-a-Triangle-Side-Length
+          Eigen::Matrix3f cov = Eigen::Matrix3f::Zero ();
+          float total_area = 0;
+          float total_perimeter = 0;
+          for(unsigned i = 0; i < contour_.size (); i++)
+          {
+            unsigned ii = i+1 % contour_.size ();
+            // Compute the center of each triangle formed by two adjacent vertex of the patch's convex hull and its centroid
+            Eigen::Vector3f centroid;
+            centroid[0] = (contour_[i].x + contour_[ii].x + centroid_[0]) / 3;
+            centroid[1] = (contour_[i].y + contour_[ii].y + centroid_[1]) / 3;
+            centroid[2] = (contour_[i].z + contour_[ii].z + centroid_[2]) / 3;
+            float l1 = sqrt ( pow ((contour_[i].x-contour_[ii].x),2) + pow((contour_[i].y-contour_[ii].y),2) + pow((contour_[i].z-contour_[ii].z),2) );
+            float l2 = sqrt ( pow ((contour_[i].x-centroid_[0]),2) + pow((contour_[i].y-centroid_[1]),2) + pow((contour_[i].z-centroid_[2]),2) );
+            float l3 = sqrt ( pow ((centroid_[0]-contour_[ii].x),2) + pow((centroid_[1]-contour_[ii].y),2) + pow((centroid_[2]-contour_[ii].z),2) );
+            float semi_perimeter = (l1 + l2 + l3) / 2;
+            float area_tri = sqrt( semi_perimeter * (semi_perimeter-l1) * (semi_perimeter-l2) * (semi_perimeter-l3) );
+            total_area += area_tri;
+            total_perimeter += l1;
+            cov += area_tri * centroid * centroid.transpose ();
+          }
+          cov /= total_area;
+          Eigen::JacobiSVD<Eigen::Matrix3f> svd (cov, Eigen::ComputeThinU | Eigen::ComputeThinV);
+          elongation_ = svd.singularValues ()[0] / svd.singularValues ()[1];
+          v_main_direction_ = svd.matrixU().block(0,0,3,1);
+        };
 
         /** \brief Calculate the plane's geometric parameters (i.e. Area, ...).
          */
         void computeParameters ();
+
+        /** \brief Transform the patch coordinates according to the
+          * \param[in] Rt affine transformation
+          */
+        void transformAffine(Eigen::Matrix4f &Rt);
 
 //        /*!
 //         * Calculate plane's main color using "MeanShift" method
@@ -264,8 +326,6 @@ namespace pcl
 //       */
 //      void mergePlane(Plane &plane);// pbmap
 //      void mergePlane2(Plane &plane);// Adaptation for RGBD360
-
-      void transformAffine(Eigen::Matrix4f &Rt);
 
     };
   }
