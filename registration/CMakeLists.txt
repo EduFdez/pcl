@@ -100,6 +100,7 @@ if(build)
         "include/pcl/${SUBSYS_NAME}/impl/lum.hpp"
         "include/pcl/${SUBSYS_NAME}/impl/ndt.hpp"
         "include/pcl/${SUBSYS_NAME}/impl/ndt_2d.hpp"
+        "include/pcl/${SUBSYS_NAME}/impl//pbmap/planar_patch.hpp"
         "include/pcl/${SUBSYS_NAME}/impl/ppf_registration.hpp"
         "include/pcl/${SUBSYS_NAME}/impl/pyramid_feature_matching.hpp"
         "include/pcl/${SUBSYS_NAME}/impl/registration.hpp"

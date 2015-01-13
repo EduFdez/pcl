@@ -46,9 +46,9 @@
 #include <fstream>
 #include <string>
 #include <vector>
-#include <map>
 
-#include <Eigen/Dense>
+//#include <Eigen/Dense>
+#include <Eigen/SVD>
 
 #include <boost/archive/tmpdir.hpp>
 
@@ -61,7 +61,6 @@
 #include <boost/serialization/assume_abstract.hpp>
 
 #include <pcl/segmentation/planar_region.h>
-//#include <pcl/registration/registration.h>
 
 namespace pcl
 {
@@ -85,10 +84,6 @@ namespace pcl
         unsigned num_obs_;
         /** \brief Semantic property. */
         unsigned semantic_group_;
-        /** \brief Set of connected planes (nearby and co-visible planes). */
-        std::set<unsigned> connected_planes_;
-        /** \brief Set of connected planes (nearby and co-visible planes). */
-        std::map<unsigned,unsigned> neighborPlanes_;
 
         // Labels to store semantic attributes
         /** \brief Patch's tag. */
@@ -109,6 +104,7 @@ namespace pcl
 //        Eigen::Matrix4f information_matrix; // Fisher information matrix (the inverse of the plane covariance)
 //        /** \brief Plane tag. */
 //        float curvature;
+
         /** \brief Eigenvector corresponding to the largest eigenvalue of the patch's points. */
         Eigen::Vector3f v_main_direction_;
         /** \brief Relation between the largest and the second largest eigenvalues. */
@@ -123,14 +119,12 @@ namespace pcl
 //        unsigned nFramesAreaIsStable;
 
         // Radiometric description
-        /** \brief Normalized rgb value corresponding to the dominant colour. */
-        Eigen::Vector3f v_normalized_rgb_;
-        /** \brief Dominant intensity. */
-        float dominant_intensity_;
+        /** \brief Normalized rgb value corresponding to the dominant colour plus the dominant Intensity. */
+        Eigen::Vector4f v_dominant_rgb_int;
         /** \brief This boolean tells whether a dominant single colour exists or not. */
         bool b_dominant_color_;
         /** \brief Standard deviation of the dominant colour. */
-        Eigen::Vector3f v_normalized_rgb_dev_;
+        Eigen::Vector3f v_dominant_rgb_dev_;
         /** \brief Histogram of the Hue values, implemented following the paper:
          * "Utilizing color information in 3d scan registration using planar-patches matching" K. Pathak et a. 2012. */
         std::vector<float> hue_histogram_;
@@ -140,25 +134,12 @@ namespace pcl
         typename pcl::PointCloud<PointT>::Ptr patch_points_;
         //std::vector<int32_t> inliers;
 
-//        /**!
-//         *  Convex Hull
-//        */
-//        std::vector<int32_t> inliers;
-//        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr polygonContourPtr;
-//        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr outerPolygonPtr; // This is going to be deprecated
-//        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr patch_points_; // This is going to be deprecated
-
       protected:
         using Region3D<PointT>::centroid_;
         using Region3D<PointT>::covariance_;
         using Region3D<PointT>::count_;
         using PlanarPolygon<PointT>::contour_;
         using PlanarPolygon<PointT>::coefficients_;
-//        using PlanarRegion<PointT>::centroid_;
-//        using PlanarRegion<PointT>::covariance_;
-//        using PlanarRegion<PointT>::count_;
-//        using PlanarRegion<PointT>::contour_;
-//        using PlanarRegion<PointT>::coefficients_;
 
       public:
 
@@ -166,9 +147,8 @@ namespace pcl
         PlanarPatch () :
             elongation_ (1.0),
             b_real_boundary_ (false),
-            b_scene_structure_ (false)
-            //convex_hull (new PointCloud<PointXYZRGBA>),
-//            points (new PointCloud<PointXYZRGBA>)
+            b_scene_structure_ (false),
+            patch_points_ (new PointCloud<PointT>)
         {
         }
 
@@ -178,7 +158,8 @@ namespace pcl
         PlanarPatch (const PlanarRegion<PointT> &planar_region) :
             elongation_ (1.0),
             b_real_boundary_ (false),
-            b_scene_structure_ (false)
+            b_scene_structure_ (false),
+            patch_points_ (new PointCloud<PointT>)
         {
             centroid_   = planar_region.getCentroid ();
             covariance_ = planar_region.getCovariance ();
@@ -190,40 +171,45 @@ namespace pcl
         /** \brief Normalize plane's coefficients, that is, make the plane coefficients {A,B,C} in ( Ax+By+Cz+D=0 )coincide with the normal vector
          */
         void
-        NormalizePlaneCoefs ()
-        {
-            float normABC = sqrt(coefficients_[0]*coefficients_[0] + coefficients_[1]*coefficients_[1] + coefficients_[2]*coefficients_[2]);
-            coefficients_[0] /= normABC;
-            coefficients_[1] /= normABC;
-            coefficients_[2] /= normABC;
-        };
+        NormalizePlaneCoefs ();
 
         /** \brief Force the 3D points of the plane to actually lay on the plane
          */
         void
-        forcePtsLayOnPlane ()
-        {
-          assert(coefficients_[0]*coefficients_[0] + coefficients_[1]*coefficients_[1] + coefficients_[2]*coefficients_[2] == 1.f);
+        forcePtsLayOnPlane ();
 
-          // The plane equation has the form Ax + By + Cz + D = 0, where the vector N=(A,B,C) is the normal and the constant D can be calculated as D = -N*(PlanePoint) = -N*PlaneCenter.
-          // The vector of coefficients stores (A,B,C,D)
-          for(unsigned i = 0; i < patch_points_->size(); i++)
-          {
-            double dist = coefficients_[0]*patch_points_->points[i].x + coefficients_[1]*patch_points_->points[i].y + coefficients_[2]*patch_points_->points[i].z + coefficients_[3];
-            patch_points_->points[i].x -= coefficients_[0] * dist;
-            patch_points_->points[i].y -= coefficients_[1] * dist;
-            patch_points_->points[i].z -= coefficients_[2] * dist;
-          }
-          // Do the same with the points defining the convex hull
-          for(unsigned i = 0; i < contour_.size(); i++)
-          {
-            double dist = coefficients_[0]*contour_[i].x + coefficients_[1]*contour_[i].y + coefficients_[2]*contour_[i].z + coefficients_[3];
-            contour_[i].x -= coefficients_[0] * dist;
-            contour_[i].y -= coefficients_[1] * dist;
-            contour_[i].z -= coefficients_[2] * dist;
-          }
-        };
+        /** \brief Calculate plane's elongation and principal direction
+          */
+        void
+        calcElongationAndPpalDir ();
 
+        /** \brief Get the UNIMODAL histogram mean-shift from variable bandwidth mean-shift.
+          * \param[in] data input histogram
+          * \param[in] max_range is the maximum value of the elements
+          * \param[in] range_in is the range within which the values are considered inliers for the given mean
+          */
+        double
+        getHistMeanShift (std::vector<float> &data,
+                          float &range_in,
+                          double max_range );
+
+        /** \brief Compute the patch's dominant colour using "MeanShift" method */
+        void
+        computeDominantColour ();
+
+        /** \brief Compute the patch's saturated Hue histogram following the paper:
+         * "Utilizing color information in 3d scan registration using planar-patches matching" K. Pathak et a. 2012. */
+        void
+        computeHueHistogram ();
+
+        /** \brief Transform the patch coordinates according to the
+          * \param[in] Rt affine transformation */
+        void
+        transformAffine (Eigen::Matrix4f &Rt);
+
+//        /** \brief Calculate the plane's geometric parameters (i.e. Area, ...).
+//         */
+//        void computeParameters ();
 
 //        /** \brief Calculate the plane's convex hull with the monotone chain algorithm.
 //         * \param[in] cloud_arg pointer to input point cloud obtained from the planar segmentation
@@ -239,54 +225,6 @@ namespace pcl
 //        {
 
 //        };
-
-        /** \brief Calculate plane's elongation and principal direction
-          */
-        void
-        calcElongationAndPpalDir ()
-        {
-          // Covariance matrix of the patch's area distribution. See www.wikihow.com/Sample/Area-of-a-Triangle-Side-Length
-          Eigen::Matrix3f cov = Eigen::Matrix3f::Zero ();
-          float total_area = 0;
-          float total_perimeter = 0;
-          for(unsigned i = 0; i < contour_.size (); i++)
-          {
-            unsigned ii = i+1 % contour_.size ();
-            // Compute the center of each triangle formed by two adjacent vertex of the patch's convex hull and its centroid
-            Eigen::Vector3f centroid;
-            centroid[0] = (contour_[i].x + contour_[ii].x + centroid_[0]) / 3;
-            centroid[1] = (contour_[i].y + contour_[ii].y + centroid_[1]) / 3;
-            centroid[2] = (contour_[i].z + contour_[ii].z + centroid_[2]) / 3;
-            float l1 = sqrt ( pow ((contour_[i].x-contour_[ii].x),2) + pow((contour_[i].y-contour_[ii].y),2) + pow((contour_[i].z-contour_[ii].z),2) );
-            float l2 = sqrt ( pow ((contour_[i].x-centroid_[0]),2) + pow((contour_[i].y-centroid_[1]),2) + pow((contour_[i].z-centroid_[2]),2) );
-            float l3 = sqrt ( pow ((centroid_[0]-contour_[ii].x),2) + pow((centroid_[1]-contour_[ii].y),2) + pow((centroid_[2]-contour_[ii].z),2) );
-            float semi_perimeter = (l1 + l2 + l3) / 2;
-            float area_tri = sqrt( semi_perimeter * (semi_perimeter-l1) * (semi_perimeter-l2) * (semi_perimeter-l3) );
-            total_area += area_tri;
-            total_perimeter += l1;
-            cov += area_tri * centroid * centroid.transpose ();
-          }
-          cov /= total_area;
-          Eigen::JacobiSVD<Eigen::Matrix3f> svd (cov, Eigen::ComputeThinU | Eigen::ComputeThinV);
-          elongation_ = svd.singularValues ()[0] / svd.singularValues ()[1];
-          v_main_direction_ = svd.matrixU().block(0,0,3,1);
-        };
-
-        /** \brief Calculate the plane's geometric parameters (i.e. Area, ...).
-         */
-        void computeParameters ();
-
-        /** \brief Transform the patch coordinates according to the
-          * \param[in] Rt affine transformation
-          */
-        void transformAffine(Eigen::Matrix4f &Rt);
-
-//        /*!
-//         * Calculate plane's main color using "MeanShift" method
-//         */
-//        void calcMainColor();
-//        void calcMainColor2();
-//        void calcPlaneHistH();
 
 //       private:
 //        /*!

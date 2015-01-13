@@ -74,7 +74,11 @@ namespace pcl
     template <typename PointT>
     class PbMap
     {
-
+      protected:
+        /** \brief Set of connected planes (nearby and co-visible planes). */
+        std::set<unsigned> connected_planes_;
+        /** \brief Set of connected planes (nearby and co-visible planes). */
+        std::map<unsigned,unsigned> neighborPlanes_;
     };
 
 //          typedef PointCloud<PointSource> PointCloudSource;
