@@ -47,24 +47,18 @@
 #include <string>
 #include <vector>
 
-//#include <Eigen/Dense>
 #include <Eigen/SVD>
-
-#include <boost/archive/tmpdir.hpp>
 
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
-
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/utility.hpp>
-#include <boost/serialization/list.hpp>
-#include <boost/serialization/assume_abstract.hpp>
+#include <boost/serialization/access.hpp>
 
 #include <pcl/segmentation/planar_region.h>
+#include <pcl/registration/pbmap/boost_serialization.h>
 
 namespace pcl
 {
-  namespace registration
+  namespace pbmap
   {
 
   /** @b PlanarPatch stores a pcl::segmentation::PlanarRegion extended by some geometric and radiometric characteristics.
@@ -105,10 +99,10 @@ namespace pcl
 //        /** \brief Plane tag. */
 //        float curvature;
 
-        /** \brief Eigenvector corresponding to the largest eigenvalue of the patch's points. */
-        Eigen::Vector3f v_main_direction_;
         /** \brief Relation between the largest and the second largest eigenvalues. */
         float elongation_; // This is the reatio between the lengths of the plane in the two principal directions
+        /** \brief Eigenvector corresponding to the largest eigenvalue of the patch's points. */
+        Eigen::Vector3f v_main_direction_;
 //        /** \brief Plane tag. */
 //        float area;
         /** \brief This boolean tells whether the patch covers completely the physical planar surface (observed without occlussions). */
@@ -141,6 +135,33 @@ namespace pcl
         using PlanarPolygon<PointT>::contour_;
         using PlanarPolygon<PointT>::coefficients_;
 
+        /** \brief PlanarPatch serialization
+          * \param[in] ar destination archive
+          * \param[in] version number
+          */
+        friend class boost::serialization::access;
+
+        template<class Archive> void
+        serialize (Archive & ar, const unsigned int version);
+//        {
+//          ar & id_;
+//          ar & num_obs_;
+//          ar & semantic_group_;
+
+//          ar & label_;
+//          ar & label_object_;
+//          ar & label_context_;
+
+//          ar & elongation_;
+//          ar & v_main_direction_;
+
+//          ar & centroid_;
+//          ar & covariance_;
+//          ar & count_;
+//          ar & contour_;
+//          ar & coefficients_;
+//        }
+
       public:
 
         /** \brief Empty constructor. */
@@ -167,6 +188,28 @@ namespace pcl
             contour_    = planar_region.getContour ();
             coefficients_ = planar_region.getCoefficients ();
         }
+
+        /** \brief Get the centroid of the region. */
+        inline void
+        setCentroid (const Eigen::Vector3f &centroid)
+        {
+          centroid_ = centroid;
+        }
+
+        /** \brief Get the centroid of the region. */
+        inline Eigen::Vector3f
+        getMainDirection () const
+        {
+          return (v_main_direction_);
+        }
+
+        /** \brief Get the centroid of the region. */
+        inline void
+        setMainDirection (const Eigen::Vector3f &v_main_direction)
+        {
+          v_main_direction_ = v_main_direction;
+        }
+        setMainDirection
 
         /** \brief Normalize plane's coefficients, that is, make the plane coefficients {A,B,C} in ( Ax+By+Cz+D=0 )coincide with the normal vector
          */

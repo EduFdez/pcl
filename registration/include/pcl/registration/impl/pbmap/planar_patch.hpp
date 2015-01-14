@@ -45,8 +45,30 @@
 #include <pcl/common/transforms.h>
 
 ///////////////////////////////////////////////////////////////////////////////////////////
+template <typename PointT, class Archive> void
+pcl::pbmap::PlanarPatch<PointT>::serialize (Archive & ar, const unsigned int version)
+{
+  ar & id_;
+  ar & num_obs_;
+  ar & semantic_group_;
+
+  ar & label_;
+  ar & label_object_;
+  ar & label_context_;
+
+  ar & elongation_;
+  ar & v_main_direction_;
+
+  ar & centroid_;
+  ar & covariance_;
+  ar & count_;
+  ar & contour_;
+  ar & coefficients_;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointT> void
-pcl::registration::PlanarPatch<PointT>::NormalizePlaneCoefs ()
+pcl::pbmap::PlanarPatch<PointT>::NormalizePlaneCoefs ()
 {
   float normABC = sqrt(coefficients_[0]*coefficients_[0] + coefficients_[1]*coefficients_[1] + coefficients_[2]*coefficients_[2]);
   if (normABC != 1.f)
@@ -61,7 +83,7 @@ pcl::registration::PlanarPatch<PointT>::NormalizePlaneCoefs ()
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointT> void
-pcl::registration::PlanarPatch<PointT>::forcePtsLayOnPlane ()
+pcl::pbmap::PlanarPatch<PointT>::forcePtsLayOnPlane ()
 {
   assert(coefficients_[0]*coefficients_[0] + coefficients_[1]*coefficients_[1] + coefficients_[2]*coefficients_[2] == 1.f);
 
@@ -86,7 +108,7 @@ pcl::registration::PlanarPatch<PointT>::forcePtsLayOnPlane ()
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointT> void
-pcl::registration::PlanarPatch<PointT>::calcElongationAndPpalDir ()
+pcl::pbmap::PlanarPatch<PointT>::calcElongationAndPpalDir ()
 {
   // Covariance matrix of the patch's area distribution. See www.wikihow.com/Sample/Area-of-a-Triangle-Side-Length
   Eigen::Matrix3f cov = Eigen::Matrix3f::Zero ();
@@ -118,7 +140,7 @@ pcl::registration::PlanarPatch<PointT>::calcElongationAndPpalDir ()
 ///////////////////////////////////////////////////////////////////////////////////////////
 //template<typename dataType>
 template <typename PointT> double
-pcl::registration::PlanarPatch<PointT>::getHistMeanShift (std::vector<float> &data, float &range_in, double max_range)
+pcl::pbmap::PlanarPatch<PointT>::getHistMeanShift (std::vector<float> &data, float &range_in, double max_range)
 {
   size_t size = data.size ();
   std::vector<float> data_temp = data;
@@ -151,7 +173,7 @@ pcl::registration::PlanarPatch<PointT>::getHistMeanShift (std::vector<float> &da
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointT> void
-pcl::registration::PlanarPatch<PointT>::computeDominantColour ()
+pcl::pbmap::PlanarPatch<PointT>::computeDominantColour ()
 {
     assert( patch_points_->size() > 0); // Check the patch is not empty
 
@@ -199,7 +221,7 @@ pcl::registration::PlanarPatch<PointT>::computeDominantColour ()
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointT> void
-pcl::registration::PlanarPatch<PointT>::computeHueHistogram()
+pcl::pbmap::PlanarPatch<PointT>::computeHueHistogram()
 {
   float fR, fG, fB;
   float fH, fS, fV;
@@ -304,7 +326,7 @@ pcl::registration::PlanarPatch<PointT>::computeHueHistogram()
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointT> void
-pcl::registration::PlanarPatch<PointT>::transformAffine (Eigen::Matrix4f &Rt)
+pcl::pbmap::PlanarPatch<PointT>::transformAffine (Eigen::Matrix4f &Rt)
 {
   // Transform normal and ppal direction
   coefficients_.block(0,0,3,1) = Rt.block (0,0,3,3) * coefficients_.block (0,0,3,1);

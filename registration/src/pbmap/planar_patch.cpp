@@ -38,3 +38,9 @@
  */
 
 #include <pcl/registration/pbmap/planar_patch.h>
+
+//#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+//pcl::PlanarRegion<pcl::PointXYZ> region;
+//pcl::PointXYZ pt;
+pcl::pbmap::PlanarPatch<pcl::PointXYZ> patch;
