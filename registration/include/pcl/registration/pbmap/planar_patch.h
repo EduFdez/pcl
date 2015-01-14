@@ -209,7 +209,6 @@ namespace pcl
         {
           v_main_direction_ = v_main_direction;
         }
-        setMainDirection
 
         /** \brief Normalize plane's coefficients, that is, make the plane coefficients {A,B,C} in ( Ax+By+Cz+D=0 )coincide with the normal vector
          */

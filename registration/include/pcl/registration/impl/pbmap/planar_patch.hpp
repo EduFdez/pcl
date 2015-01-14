@@ -328,13 +328,13 @@ pcl::pbmap::PlanarPatch<PointT>::computeHueHistogram()
 template <typename PointT> void
 pcl::pbmap::PlanarPatch<PointT>::transformAffine (Eigen::Matrix4f &Rt)
 {
+  // Transform centroid
+  centroid_ = Rt.block (0,0,3,3) * centroid_ + Rt.block (0,3,3,1);
+
   // Transform normal and ppal direction
   coefficients_.block(0,0,3,1) = Rt.block (0,0,3,3) * coefficients_.block (0,0,3,1);
   coefficients_[3] = -(coefficients_.block (0,0,3,1). dot (centroid_));
   v_main_direction_ = Rt.block (0,0,3,3) * v_main_direction_;
-
-  // Transform centroid
-  centroid_ = Rt.block (0,0,3,3) * centroid_ + Rt.block (0,3,3,1);
 
   // Transform convex hull points
   for (size_t i = 0; i < contour_.size (); ++i)

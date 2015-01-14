@@ -66,34 +66,34 @@ pcl::pbmap::PbMap<PointT>::Merge (pcl::pbmap::PbMap &pbm, Eigen::Matrix4f &Rt)
   for (size_t i = 0; i < pbm.patches_.size(); i++)
   {
     pcl::pbmap::PlanarPatch patch = pbm.patches_[i];
+    patch.transformAffine (Rt);
 
-    // Transform centroid, normal and main direction
-    patch.setCentroid ( Rt.block (0,0,3,3) * patch.getCentroid () + Rt.block (0,3,3,1) );
-    pcl::ModelCoefficients new_coeffs;
-    new_coeffs.values.resize (4);
-    new_coeffs.values[0] = Rt.block (0,0,1,3) * patch.getCoefficients (). block (0,0,3,1);
-    new_coeffs.values[1] = Rt.block (1,0,1,3) * patch.getCoefficients (). block (0,0,3,1);
-    new_coeffs.values[2] = Rt.block (2,0,1,3) * patch.getCoefficients (). block (0,0,3,1);
-    new_coeffs.values[3] = Rt.block (0,3,3,1).transpose () * patch.getCoefficients (). block (0,0,3,1) + patch.getCoefficients ()[3];
-    patch.setCoefficients ( new_coeffs );
-    patch.setMainDirection ( Rt.block (0,0,3,3) * patch.getMainDirection () );
+//    // Transform centroid, normal and main direction
+//    patch.setCentroid ( Rt.block (0,0,3,3) * patch.getCentroid () + Rt.block (0,3,3,1) );
+//    pcl::ModelCoefficients new_coeffs;
+//    new_coeffs.values.resize (4);
+//    new_coeffs.values[0] = Rt.block (0,0,1,3) * patch.getCoefficients (). block (0,0,3,1);
+//    new_coeffs.values[1] = Rt.block (1,0,1,3) * patch.getCoefficients (). block (0,0,3,1);
+//    new_coeffs.values[2] = Rt.block (2,0,1,3) * patch.getCoefficients (). block (0,0,3,1);
+//    new_coeffs.values[3] = Rt.block (0,3,3,1).transpose () * patch.getCoefficients (). block (0,0,3,1) + patch.getCoefficients ()[3];
+//    patch.setCoefficients ( new_coeffs );
+//    patch.setMainDirection ( Rt.block (0,0,3,3) * patch.getMainDirection () );
 
-    // Transform convex hull points
-    pcl::transformPointCloud(*patch.polygonContourPtr, *patch.polygonContourPtr, Rt);
+//    // Transform convex hull points
+//    pcl::transformPointCloud(*patch.polygonContourPtr, *patch.polygonContourPtr, Rt);
 
-    pcl::transformPointCloud(*patch.planePointCloudPtr, *patch.planePointCloudPtr, Rt);
+//    pcl::transformPointCloud(*patch.planePointCloudPtr, *patch.planePointCloudPtr, Rt);
 
-    patch.id = vPlanes.size();
+    patch.id = patches_.size();
 
-    vPlanes.push_back(plane);
+    patches_.push_back ( patch );
   }
 
   // Rotate and translate the point cloud
-  pcl::PointCloud<pcl::PointXYZRGBA>::Ptr alignedPointCloud(new pcl::PointCloud<pcl::PointXYZRGBA>);
-  pcl::transformPointCloud(*pbm.globalMapPtr,*alignedPointCloud,T);
+  pcl::PointCloud<PointT>::Ptr aligned_point_cloud (new pcl::PointCloud<PointT>);
+  pcl::transformPointCloud ( *pbm.point_cloud_, *aligned_point_cloud, Rt);
 
-  *globalMapPtr += *alignedPointCloud;
-
+  *point_cloud_ += *aligned_point_cloud;
 }
 
 
