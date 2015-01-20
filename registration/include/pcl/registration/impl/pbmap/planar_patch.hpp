@@ -41,8 +41,9 @@
 #ifndef PCL_PLANAR_PATCH_HPP_
 #define PCL_PLANAR_PATCH_HPP_
 
-#include <pcl/common/common.h>
+//#include <pcl/common/common.h>
 #include <pcl/common/transforms.h>
+#include <pcl/surface/convex_hull.h>
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointT, class Archive> void
@@ -83,26 +84,72 @@ pcl::pbmap::PlanarPatch<PointT>::NormalizePlaneCoefs ()
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointT> void
-pcl::pbmap::PlanarPatch<PointT>::forcePtsLayOnPlane ()
+pcl::pbmap::PlanarPatch<PointT>::refineConvexHull ()
 {
-  assert(coefficients_[0]*coefficients_[0] + coefficients_[1]*coefficients_[1] + coefficients_[2]*coefficients_[2] == 1.f);
+  // Create a Concave Hull representation of the projected inliers
+  pcl::PointCloud<PointT>::Ptr cloud_input (new pcl::PointCloud<PointT>);
+  pcl::PointCloud<PointT>::Ptr cloud_hull (new pcl::PointCloud<PointT>);
+  cloud_input->points = getContour ();
+  pcl::ConvexHull<PointT> chull;
+  chull.setInputCloud (cloud_input);
+  chull.setAlpha (0.1);
+  chull.reconstruct (*cloud_hull);
+  setContour (cloud_hull->points);
+}
 
-  // The plane equation has the form Ax + By + Cz + D = 0, where the vector N=(A,B,C) is the normal and the constant D can be calculated as D = -N*(PlanePoint) = -N*PlaneCenter.
-  // The vector of coefficients stores (A,B,C,D)
-  for(unsigned i = 0; i < patch_points_->size(); i++)
+///////////////////////////////////////////////////////////////////////////////////////////
+template <typename PointT> void
+pcl::pbmap::PlanarPatch<PointT>::computeCentroidAndArea()
+{
+  int k0, k1, k2;
+
+  // Find axis with largest normal component and project onto perpendicular plane
+  k0 = (fabs (getNormal ()[0] ) > fabs (getNormal ()[1])) ? 0  : 1;
+  k0 = (fabs (getNormal ()[k0]) > fabs (getNormal ()[2])) ? k0 : 2;
+  k1 = (k0 + 1) % 3;
+  k2 = (k0 + 2) % 3;
+
+  // cos(theta), where theta is the angle between the polygon and the projected plane
+  float ct = fabs ( getNormal ()[k0] );
+  float area_2 = 0.0;
+  Eigen::Vector3f centroid = Eigen::Vector3f::Zero();
+  Eigen::Vector3f p_i, p_j;
+
+  for (unsigned int i = 0; i < getContour ().size (); i++)
   {
-    double dist = coefficients_[0]*patch_points_->points[i].x + coefficients_[1]*patch_points_->points[i].y + coefficients_[2]*patch_points_->points[i].z + coefficients_[3];
-    patch_points_->points[i].x -= coefficients_[0] * dist;
-    patch_points_->points[i].y -= coefficients_[1] * dist;
-    patch_points_->points[i].z -= coefficients_[2] * dist;
+    p_i = getVector3FromPointXYZ (getContour ()[i]);
+    int j = (i + 1) % getContour ().size ();
+    p_j = getVector3FromPointXYZ (getContour ()[j]);
+    double cross_segment = p_i[k1] * p_j[k2] - p_i[k2] * p_j[k1];
+
+    area_2 += cross_segment;
+    centroid[k1] += (p_i[k1] + p_j[k1]) * cross_segment;
+    centroid[k2] += (p_i[k2] + p_j[k2]) * cross_segment;
   }
-  // Do the same with the points defining the convex hull
-  for(unsigned i = 0; i < contour_.size(); i++)
-  {
-    double dist = coefficients_[0]*contour_[i].x + coefficients_[1]*contour_[i].y + coefficients_[2]*contour_[i].z + coefficients_[3];
-    contour_[i].x -= coefficients_[0] * dist;
-    contour_[i].y -= coefficients_[1] * dist;
-    contour_[i].z -= coefficients_[2] * dist;
+  areaHull = fabs (area_2) / (2 * ct);
+
+  centroid[k1] /= (3*area_2);
+  centroid[k2] /= (3*area_2);
+  centroid[k0] = (getNormal ().dot(v3center) - getNormal ()[k1]*centroid[k1] - getNormal ()[k2]*centroid[k2]) / getNormal ()[k0];
+
+  setCentroid (centroid);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
+template <typename PointT> void
+pcl::pbmap::PlanarPatch<PointT>::calcElongationAndPpalDir()
+{
+//  pcl::PCA< PointT > pca;
+//  pca.setInputCloud(planePointCloudPtr);
+//  Eigen::VectorXf eigenVal = pca.getEigenValues();
+////  if( eigenVal[0] > 2 * eigenVal[1] )
+//  {
+//    elongation = sqrt(eigenVal[0] / eigenVal[1]);
+//    Eigen::MatrixXf eigenVect = pca.getEigenVectors();
+////    v3PpalDir = makeVector(eigenVect(0,0), eigenVect(1,0), eigenVect(2,0));
+//    v3PpalDir[0] = eigenVect(0,0);
+//    v3PpalDir[1] = eigenVect(1,0);
+//    v3PpalDir[2] = eigenVect(2,0);
   }
 }
 
@@ -135,40 +182,6 @@ pcl::pbmap::PlanarPatch<PointT>::calcElongationAndPpalDir ()
   Eigen::JacobiSVD<Eigen::Matrix3f> svd (cov, Eigen::ComputeThinU | Eigen::ComputeThinV);
   elongation_ = svd.singularValues ()[0] / svd.singularValues ()[1];
   v_main_direction_ = svd.matrixU ().block (0,0,3,1);
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////
-//template<typename dataType>
-template <typename PointT> double
-pcl::pbmap::PlanarPatch<PointT>::getHistMeanShift (std::vector<float> &data, float &range_in, double max_range)
-{
-  size_t size = data.size ();
-  std::vector<float> data_temp = data;
-  double mean_shift, std_dev_hist;
-  pcl::getMeanStd (data, mean_shift, std_dev_hist);
-
-  double shift = 1000;
-  //int iteration_counter = 0;
-  double convergence = max_range * 0.001;
-  while (2*data_temp.size () > size && shift > convergence)
-  {
-    for (typename std::vector<float>::iterator it=data_temp.begin (); it != data_temp.end (); )
-    {
-      if (fabs (*it - mean_shift) > std_dev_hist)
-        data_temp.erase (it);
-      else
-        ++it;
-    }
-    double mean_updated;
-    pcl::getMeanStd (data_temp, mean_updated, std_dev_hist);
-    shift = fabs (mean_updated - mean_shift);
-    mean_shift = mean_updated;
-
-    //++iteration_counter;
-  }
-
-  return mean_shift;
-  //return static_cast<dataType>(mean_shift);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -325,6 +338,86 @@ pcl::pbmap::PlanarPatch<PointT>::computeHueHistogram()
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
+template <typename PointT> bool
+pcl::pbmap::PbMap<PointT>::isPatchNearby(pcl::pbmap::PlanarPatch &patch, const float threshold_dist)
+{
+  float threshold_dist2 = threshold_dist * threshold_dist;
+
+  // First we check distances between centroids and vertex to accelerate this check
+  if( (getCentroid () - patch.getCentroid ()).squaredNorm () < threshold_dist2 )
+    return true;
+
+  for(unsigned i=1; i < getContour ().size (); i++)
+    if( (getVector3fromPointXYZ(getContour ()[i]) - patch.getCentroid ()).squaredNorm () < threshold_dist2 )
+      return true;
+
+  for(unsigned j=1; j < patch.getContour ().size (); j++)
+    if( (getCentroid () - getVector3fromPointXYZ(patch.getContour ()[j])).squaredNorm () < threshold_dist2 )
+      return true;
+
+  for(unsigned i=1; i < getContour ().size (); i++)
+    for(unsigned j=1; j < patch.getContour ().size (); j++)
+      if( (diffPoints(getContour ()[i], patch.getContour ()[j]) ).squaredNorm() < threshold_dist2 )
+        return true;
+
+  //If not found yet, search properly by checking distances:
+  // a) Between an edge and a vertex
+  // b) Between two edges (imagine two polygons on perpendicular patchs)
+  // c) Between a vertex and the inside of the polygon
+  // d) Or the polygons intersect
+
+  // a) & b)
+  for(unsigned i=1; i < patch1.polygonContourPtr->size(); i++)
+    for(unsigned j=1; j < patch2.polygonContourPtr->size(); j++)
+      if(dist3D_Segment_to_Segment2(Segment(patch1.getContour ()[i],patch1.getContour ()[i-1]), Segment(patch2.getContour ()[j],patch2.getContour ()[j-1])) < threshold_dist2)
+        return true;
+
+  // c)
+  for(unsigned i=1; i < patch1.polygonContourPtr->size(); i++)
+    if( patch2.getNormal ().dot(getVector3fromPointXYZ(patch1.getContour ()[i]) - patch2.v3center) < threshold_dist )
+      if(isInHull(patch1.getContour ()[i], patch2.polygonContourPtr) )
+        return true;
+
+  for(unsigned j=1; j < patch2.polygonContourPtr->size(); j++)
+    if( patch1.getNormal ().dot(getVector3fromPointXYZ(patch2.getContour ()[j]) - patch1.v3center) < threshold_dist )
+      if(isInHull(patch2.getContour ()[j], patch1.polygonContourPtr) )
+        return true;
+
+  return false;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
+template <typename PointT> void
+pcl::pbmap::PlanarPatch<PointT>::mergePlanes(const pcl::pbmap::PlanarPatch<PointT> & new_observation)
+{
+  // Update normal and center
+  Eigen::Vector3f new_normal = area_*getNormal () + new_observation.getArea () * new_observation.getNormal ();
+  setNormal ( new_normal / new_normal.norm() );
+  // Update patch point and Filter the points of the patch with a voxel-grid. This points are used only for visualization
+  *patch_points_ += *new_observation.patch_points_; // Add the points of the new detection and perform a voxel grid
+  static pcl::VoxelGrid<PointT> merge_grid;
+  merge_grid.setLeafSize (0.05,0.05,0.05);
+  pcl::PointCloud<PointT> cloud_merge;
+  merge_grid.setInputCloud (patch_points_);
+  merge_grid.filter (cloud_merge);
+  patch_points_->clear ();
+  *patch_points_ = cloud_merge;
+
+//  if(configPbMap.use_color)
+//    calcMainColor();
+
+  refineConvexHull ();
+//          *new_observation.polygonContourPtr += *polygonContourPtr;
+//          calcConvexHull(new_observation.polygonContourPtr);
+  computeCentroidAndArea();
+
+  getCoefficients ()[3] = -getNormal ().dot (getCentroid ());
+
+  // Move the points to fulfill the plane equation
+  forcePtsLayOnPlane();
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointT> void
 pcl::pbmap::PlanarPatch<PointT>::transformAffine (Eigen::Matrix4f &Rt)
 {
@@ -345,6 +438,31 @@ pcl::pbmap::PlanarPatch<PointT>::transformAffine (Eigen::Matrix4f &Rt)
 
   // Transform patch's points
   pcl::transformPointCloud (*patch_points_, *patch_points_, Rt);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
+template <typename PointT> void
+pcl::pbmap::PlanarPatch<PointT>::forcePtsLayOnPlane ()
+{
+  assert(coefficients_[0]*coefficients_[0] + coefficients_[1]*coefficients_[1] + coefficients_[2]*coefficients_[2] == 1.f);
+
+  // The plane equation has the form Ax + By + Cz + D = 0, where the vector N=(A,B,C) is the normal and the constant D can be calculated as D = -N*(PlanePoint) = -N*PlaneCenter.
+  // The vector of coefficients stores (A,B,C,D)
+  for(unsigned i = 0; i < patch_points_->size(); i++)
+  {
+    double dist = coefficients_[0]*patch_points_->points[i].x + coefficients_[1]*patch_points_->points[i].y + coefficients_[2]*patch_points_->points[i].z + coefficients_[3];
+    patch_points_->points[i].x -= coefficients_[0] * dist;
+    patch_points_->points[i].y -= coefficients_[1] * dist;
+    patch_points_->points[i].z -= coefficients_[2] * dist;
+  }
+  // Do the same with the points defining the convex hull
+  for(unsigned i = 0; i < contour_.size(); i++)
+  {
+    double dist = coefficients_[0]*contour_[i].x + coefficients_[1]*contour_[i].y + coefficients_[2]*contour_[i].z + coefficients_[3];
+    contour_[i].x -= coefficients_[0] * dist;
+    contour_[i].y -= coefficients_[1] * dist;
+    contour_[i].z -= coefficients_[2] * dist;
+  }
 }
 
 #endif //#ifndef PCL_PLANAR_PATCH_HPP_

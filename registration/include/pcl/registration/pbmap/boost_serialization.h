@@ -89,10 +89,10 @@ namespace boost
       ar & point_cloud.width;
       ar & point_cloud.is_dense;
       size_t cloud_size = point_cloud.height * point_cloud.width;
-      if( cloud_size != point_cloud.points.size () )
+      if( cloud_size != point_cloud.size () )
          point_cloud.points.resize ( cloud_size );
 
-      for (size_t i=0; i< point_cloud.points.size (); i++)
+      for (size_t i=0; i< point_cloud.size (); i++)
       {
         ar & point_cloud.points[i].x;
         ar & point_cloud.points[i].y;

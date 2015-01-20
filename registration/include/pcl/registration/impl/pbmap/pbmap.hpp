@@ -97,53 +97,6 @@ pcl::pbmap::PbMap<PointT>::Merge (pcl::pbmap::PbMap &pbm, Eigen::Matrix4f &Rt)
 }
 
 
-///////////////////////////////////////////////////////////////////////////////////////////
-//template <typename PointT> bool
-//pcl::pbmap::PbMap<PointT>::arePatchesNearby(pcl::pbmap::PlanarPatch &patch1, pcl::pbmap::PlanarPatch &patch2, const float distThreshold)
-//{
-//  float distThres2 = distThreshold * distThreshold;
 
-//  // First we check distances between centroids and vertex to accelerate this check
-//  if( (patch1.v3center - patch2.v3center).squaredNorm() < distThres2 )
-//    return true;
-
-//  for(unsigned i=1; i < patch1.polygonContourPtr->size(); i++)
-//    if( (getVector3fromPointXYZ(patch1.polygonContourPtr->points[i]) - patch2.v3center).squaredNorm() < distThres2 )
-//      return true;
-
-//  for(unsigned j=1; j < patch2.polygonContourPtr->size(); j++)
-//    if( (patch1.v3center - getVector3fromPointXYZ(patch2.polygonContourPtr->points[j]) ).squaredNorm() < distThres2 )
-//      return true;
-
-//  for(unsigned i=1; i < patch1.polygonContourPtr->size(); i++)
-//    for(unsigned j=1; j < patch2.polygonContourPtr->size(); j++)
-//      if( (diffPoints(patch1.polygonContourPtr->points[i], patch2.polygonContourPtr->points[j]) ).squaredNorm() < distThres2 )
-//        return true;
-
-//  //If not found yet, search properly by checking distances:
-//  // a) Between an edge and a vertex
-//  // b) Between two edges (imagine two polygons on perpendicular patchs)
-//  // c) Between a vertex and the inside of the polygon
-//  // d) Or the polygons intersect
-
-//  // a) & b)
-//  for(unsigned i=1; i < patch1.polygonContourPtr->size(); i++)
-//    for(unsigned j=1; j < patch2.polygonContourPtr->size(); j++)
-//      if(dist3D_Segment_to_Segment2(Segment(patch1.polygonContourPtr->points[i],patch1.polygonContourPtr->points[i-1]), Segment(patch2.polygonContourPtr->points[j],patch2.polygonContourPtr->points[j-1])) < distThres2)
-//        return true;
-
-//  // c)
-//  for(unsigned i=1; i < patch1.polygonContourPtr->size(); i++)
-//    if( patch2.v3normal.dot(getVector3fromPointXYZ(patch1.polygonContourPtr->points[i]) - patch2.v3center) < distThreshold )
-//      if(isInHull(patch1.polygonContourPtr->points[i], patch2.polygonContourPtr) )
-//        return true;
-
-//  for(unsigned j=1; j < patch2.polygonContourPtr->size(); j++)
-//    if( patch1.v3normal.dot(getVector3fromPointXYZ(patch2.polygonContourPtr->points[j]) - patch1.v3center) < distThreshold )
-//      if(isInHull(patch2.polygonContourPtr->points[j], patch1.polygonContourPtr) )
-//        return true;
-
-//  return false;
-//}
 
 #endif //#ifndef PCL_PBMAP_HPP_

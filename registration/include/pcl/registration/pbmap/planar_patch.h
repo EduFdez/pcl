@@ -54,6 +54,7 @@
 #include <boost/serialization/access.hpp>
 
 #include <pcl/segmentation/planar_region.h>
+#include <pcl/registration/pbmap/utils.h>
 #include <pcl/registration/pbmap/boost_serialization.h>
 
 namespace pcl
@@ -99,8 +100,10 @@ namespace pcl
 //        /** \brief Plane tag. */
 //        float curvature;
 
-        /** \brief Relation between the largest and the second largest eigenvalues. */
-        float elongation_; // This is the reatio between the lengths of the plane in the two principal directions
+        /** \brief Area of the patch computed from the convex hull. */
+        float area_;
+        /** \brief Relation between the largest and the second largest eigenvalues of the patch's points. */
+        float elongation_;
         /** \brief Eigenvector corresponding to the largest eigenvalue of the patch's points. */
         Eigen::Vector3f v_main_direction_;
 //        /** \brief Plane tag. */
@@ -189,11 +192,25 @@ namespace pcl
             coefficients_ = planar_region.getCoefficients ();
         }
 
-        /** \brief Get the centroid of the region. */
+        /** \brief Set the centroid of the patch. */
         inline void
         setCentroid (const Eigen::Vector3f &centroid)
         {
           centroid_ = centroid;
+        }
+
+        /** \brief Get the centroid of the region. */
+        inline Eigen::Vector3f
+        getNormal () const
+        {
+          return this->getCoefficients ().block (0,0,3,1);
+        }
+
+        /** \brief Get the centroid of the region. */
+        inline float
+        getArea () const
+        {
+          return area_;
         }
 
         /** \brief Get the centroid of the region. */
@@ -210,30 +227,38 @@ namespace pcl
           v_main_direction_ = v_main_direction;
         }
 
+        /** \brief Get the number of observations. */
+        inline unsigned &
+        getObservations ()
+        {
+          return (num_obs_);
+        }
+
+        /** \brief Get the number of observations. */
+        inline std::string &
+        getLabel ()
+        {
+          return (label_);
+        }
+
         /** \brief Normalize plane's coefficients, that is, make the plane coefficients {A,B,C} in ( Ax+By+Cz+D=0 )coincide with the normal vector
          */
         void
         NormalizePlaneCoefs ();
 
-        /** \brief Force the 3D points of the plane to actually lay on the plane
-         */
+        /** \brief Refine the patch's convex hull
+          */
         void
-        forcePtsLayOnPlane ();
+        refineConvexHull ();
+
+        /** \brief Compute the patch's convex-hull area and mass center
+        */
+        void computeCentroidAndArea();
 
         /** \brief Calculate plane's elongation and principal direction
           */
         void
         calcElongationAndPpalDir ();
-
-        /** \brief Get the UNIMODAL histogram mean-shift from variable bandwidth mean-shift.
-          * \param[in] data input histogram
-          * \param[in] max_range is the maximum value of the elements
-          * \param[in] range_in is the range within which the values are considered inliers for the given mean
-          */
-        double
-        getHistMeanShift (std::vector<float> &data,
-                          float &range_in,
-                          double max_range );
 
         /** \brief Compute the patch's dominant colour using "MeanShift" method */
         void
@@ -244,10 +269,27 @@ namespace pcl
         void
         computeHueHistogram ();
 
+        /** \brief Tell whether the current patch is closer to the input patch than a given threshold
+          * \param[in] patch the patch to compare
+          * \param[in] threshold_dist
+          */
+        bool
+        isPatchNearby(const PlanarPatch<PointT> & patch, const float threshold_dist);
+
+        /** \brief Compute the patch's saturated Hue histogram following the paper:
+         * "Utilizing color information in 3d scan registration using planar-patches matching" K. Pathak et a. 2012. */
+        void
+        mergePlanes(const PlanarPatch<PointT> & new_observation);
+
         /** \brief Transform the patch coordinates according to the
           * \param[in] Rt affine transformation */
         void
         transformAffine (Eigen::Matrix4f &Rt);
+
+        /** \brief Force the 3D points of the plane to actually lay on the plane
+         */
+        void
+        forcePtsLayOnPlane ();
 
 //        /** \brief Calculate the plane's geometric parameters (i.e. Area, ...).
 //         */
@@ -284,10 +326,6 @@ namespace pcl
 //  //      * \param normal the plane normal
 //        */
 //      float compute2DPolygonalArea (/*PointCloud<PointXYZRGBA>::Ptr &polygonContourPtr, Vector<3> &normal*/);
-
-//      /** \brief Compute the patch's convex-hull area and mass center
-//        */
-//      void computeMassCenterAndArea();
 
 
 //      /*!Returns true when the closest distance between the patches "this" and "plane" is under distThreshold.*/

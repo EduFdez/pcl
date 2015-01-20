@@ -44,6 +44,8 @@ if(build)
         "include/pcl/${SUBSYS_NAME}/pbmap/boost_serialization.h"
         "include/pcl/${SUBSYS_NAME}/pbmap/planar_patch.h"
         "include/pcl/${SUBSYS_NAME}/pbmap/pbmap.h"
+        "include/pcl/${SUBSYS_NAME}/pbmap/pbmap_viewer.h"
+        "include/pcl/${SUBSYS_NAME}/pbmap/utils.h"
         "include/pcl/${SUBSYS_NAME}/ppf_registration.h"
 
         "include/pcl/${SUBSYS_NAME}/impl/pairwise_graph_registration.hpp"
@@ -103,6 +105,7 @@ if(build)
         "include/pcl/${SUBSYS_NAME}/impl/ndt_2d.hpp"
         "include/pcl/${SUBSYS_NAME}/impl//pbmap/pbmap.hpp"
         "include/pcl/${SUBSYS_NAME}/impl//pbmap/planar_patch.hpp"
+        "include/pcl/${SUBSYS_NAME}/impl//pbmap/utils.hpp"
         "include/pcl/${SUBSYS_NAME}/impl/ppf_registration.hpp"
         "include/pcl/${SUBSYS_NAME}/impl/pyramid_feature_matching.hpp"
         "include/pcl/${SUBSYS_NAME}/impl/registration.hpp"
@@ -152,6 +155,7 @@ if(build)
         src/ndt_2d.cpp
         src/pbmap/planar_patch.cpp
         src/pbmap/pbmap.cpp
+        src/pbmap/utils.cpp
         src/transformation_estimation_2D.cpp
         src/transformation_estimation_svd.cpp
         src/transformation_estimation_svd_scale.cpp

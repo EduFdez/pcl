@@ -252,6 +252,13 @@ pcl::OrganizedMultiPlaneSegmentation<PointT, PointNT, PointLT>::segmentAndRefine
                                              model_coefficients[i].values[2],
                                              model_coefficients[i].values[3]);
 
+    // Force that the normal vector points outwards (to the camera)
+    float normABC = sqrt (model[0]*model[0] + model[1]*model[1] + model[2]*model[2]);
+    //std::cout << "normal " << normABC << " " << model.transpose () << "\n";
+    if ( model (2) > 0 )
+        model = -model;
+    //std::cout << "z " <<  model (2) << "\n";
+
     Eigen::Vector3f vp (0.0, 0.0, 0.0);
     if (project_points_)
       boundary_cloud = projectToPlaneFromViewpoint (boundary_cloud, model, centroid, vp);

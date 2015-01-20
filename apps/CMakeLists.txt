@@ -31,8 +31,8 @@ if(build)
 
     include("${VTK_USE_FILE}")
 
-    set(incs "include/pcl/${SUBSYS_NAME}/render_views_tesselated_sphere.h")
-    set(srcs "src/render_views_tesselated_sphere.cpp")
+#    set(incs "include/pcl/${SUBSYS_NAME}/render_views_tesselated_sphere.h")
+#    set(srcs "src/render_views_tesselated_sphere.cpp")
 
     PCL_ADD_EXECUTABLE(pcl_ppf_object_recognition "${SUBSYS_NAME}" src/ppf_object_recognition.cpp)
     target_link_libraries(pcl_ppf_object_recognition pcl_common pcl_io pcl_filters pcl_features pcl_registration pcl_visualization pcl_sample_consensus pcl_segmentation)
@@ -121,6 +121,9 @@ if(build)
 
       PCL_ADD_EXECUTABLE_OPT_BUNDLE(pcl_openni_organized_multi_plane_segmentation "${SUBSYS_NAME}" src/openni_organized_multi_plane_segmentation.cpp)
       target_link_libraries(pcl_openni_organized_multi_plane_segmentation pcl_common pcl_io pcl_filters pcl_visualization pcl_segmentation pcl_features)
+
+      PCL_ADD_EXECUTABLE_OPT_BUNDLE(pcl_openni_pbmap_construction "${SUBSYS_NAME}" src/openni_pbmap_construction.cpp)
+      target_link_libraries(pcl_openni_pbmap_construction pcl_common pcl_io pcl_filters pcl_visualization pcl_segmentation pcl_features pcl_registration)
 
       PCL_ADD_EXECUTABLE_OPT_BUNDLE(pcl_openni_ii_normal_estimation "${SUBSYS_NAME}" src/openni_ii_normal_estimation.cpp)
       target_link_libraries(pcl_openni_ii_normal_estimation pcl_common pcl_io pcl_filters pcl_visualization pcl_segmentation pcl_sample_consensus pcl_features pcl_surface)
