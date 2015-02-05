@@ -43,7 +43,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <pcl/visualization/pcl_visualizer.h>
-#include <pcl/registration/pbmap/pbmap_ptr_->h>
+#include <pcl/registration/pbmap/pbmap.h>
 
 namespace pcl
 {
@@ -61,18 +61,13 @@ namespace pcl
       protected:
 
         boost::shared_ptr<pcl::visualization::PCLVisualizer> cloud_viewer_;
-
-        //bool show_graph_ = false;
-        bool show_cloud_;
-        bool show_pbmap_ = true;
-
         bool show_pbmap_;
         bool show_cloud_;
         bool show_graph_;
       public:
 
         /** The PbMap to show. */
-        pcl::pbmap::PbMap<PointT>::Ptr pbmap_ptr_;
+        typename pcl::pbmap::PbMap<PointT>::Ptr pbmap_ptr_;
 
         /** \brief Empty constructor. */
         PbMapViewer() :
@@ -85,7 +80,7 @@ namespace pcl
         }
 
         /** \brief Constructor. */
-        PbMapViewer(const pcl::pbmap::PbMap<PointT>::Ptr & pbm) :
+        PbMapViewer(const typename pcl::pbmap::PbMap<PointT>::Ptr & pbm) :
             cloud_viewer_ (new pcl::visualization::PCLVisualizer ("PbMap")),
             pbmap_ptr_ (pbm),
             show_cloud_ (true),
@@ -145,8 +140,8 @@ namespace pcl
 
 //          // Render the data
 //          {
-//            viz.removeAllShapes ();
-//            viz.removeAllPointClouds ();
+//            cloud_viewer_->removeAllShapes ();
+//            cloud_viewer_->removeAllPointClouds ();
 
 //            char name[1024];
 
@@ -159,63 +154,63 @@ namespace pcl
 //                double radius = 0.1 * sqrt (pbmap_ptr_->patches_[i].areaVoxels);
 //                //        cout << "radius " << radius << std::endl;
 //                sprintf (name, "sphere%u", static_cast<unsigned>(i));
-//                viz.addSphere (center, radius, Rf[i%10], Gf[i%10], Bf[i%10], name);
+//                cloud_viewer_->addSphere (center, radius, Rf[i%10], Gf[i%10], Bf[i%10], name);
 
 //                if( !pbmap_ptr_->patches_[i].getLabel ().empty () )
-//                    viz.addText3D (pbmap_ptr_->patches_[i].getLabel (), center, 0.1, Rf[i%10], Gf[i%10], Bf[i%10], pbmap_ptr_->patches_[i].getLabel ());
+//                    cloud_viewer_->addText3D (pbmap_ptr_->patches_[i].getLabel (), center, 0.1, Rf[i%10], Gf[i%10], Bf[i%10], pbmap_ptr_->patches_[i].getLabel ());
 //                else
 //                {
 //                  sprintf (name, "P%u", static_cast<unsigned>(i));
-//                  viz.addText3D (name, center, 0.1, Rf[i%10], Gf[i%10], Bf[i%10], name);
+//                  cloud_viewer_->addText3D (name, center, 0.1, Rf[i%10], Gf[i%10], Bf[i%10], name);
 //                }
 
-//                for (map<unsigned,unsigned>::iterator it = pbmap_ptr_->patches_[i].neighborPlanes.begin(); it != pbmap_ptr_->patches_[i].neighborPlanes.end(); it++)
+//                for (std::map<unsigned,unsigned>::iterator it = pbmap_ptr_->patches_[i].neighborPlanes.begin(); it != pbmap_ptr_->patches_[i].neighborPlanes.end(); it++)
 //                {
 //                  if (it->first > pbmap_ptr_->patches_[i].id)
 //                    break;
 
 //                  sprintf (name, "common_observations%u_%u", static_cast<unsigned>(i), static_cast<unsigned> (it->first));
 //                  pcl::PointXYZ center_it (2*pbmap_ptr_->patches_[it->first].getCentroid ()[0], 2*pbmap_ptr_->patches_[it->first].getCentroid ()[1], 2*pbmap_ptr_->patches_[it->first].getCentroid ()[2]);
-//                  viz.addLine (center, center_it, Rf[i%10], Gf[i%10], Bf[i%10], name);
+//                  cloud_viewer_->addLine (center, center_it, Rf[i%10], Gf[i%10], Bf[i%10], name);
 
 //                  sprintf (name, "edge%u_%u", static_cast<unsigned>(i), static_cast<unsigned>(it->first));
 //                  char common_observations[8];
 //                  sprintf (common_observations, "%u", it->second);
 //                  pcl::PointXYZ half_edge ( (center_it.x+center.x)/2, (center_it.y+center.y)/2, (center_it.z+center.z)/2 );
-//                  viz.addText3D (common_observations, half_edge, 0.05, 1.0, 1.0, 1.0, name);
+//                  cloud_viewer_->addText3D (common_observations, half_edge, 0.05, 1.0, 1.0, 1.0, name);
 //                }
 //              }
 //            }
 //            else
 //            { // Regular representation
-//              if (!viz.updatePointCloud (pbmap_ptr_->point_cloud_, "cloud"))
-//                viz.addPointCloud (pbmap_ptr_->point_cloud_, "cloud");
+//              if (!cloud_viewer_->updatePointCloud (pbmap_ptr_->point_cloud_, "cloud"))
+//                cloud_viewer_->addPointCloud (pbmap_ptr_->point_cloud_, "cloud");
 
 //              sprintf (name, "PointCloud size %u", static_cast<unsigned>( pbmap_ptr_->point_cloud_->size() ) );
-//              viz.addText(name, 10, 20);
+//              cloud_viewer_->addText(name, 10, 20);
 
 //              for (size_t i=0; i<pbmap_ptr_->patches_.size(); i++)
 //              {
-//                Plane &plane_i = pbmap_ptr_->patches_[i];
+//                Plane &patch_i = pbmap_ptr_->patches_[i];
 //        //        sprintf (name, "normal_%u", static_cast<unsigned>(i));
 //                name[0] = *(mrpt::format("normal_%u", static_cast<unsigned>(i)).c_str());
 //                pcl::PointXYZ pt1, pt2; // Begin and end points of normal's arrow for visualization
-//                pt1 = pcl::PointXYZ(plane_i.getCentroid ()[0], plane_i.getCentroid ()[1], plane_i.getCentroid ()[2]);
-//                pt2 = pcl::PointXYZ(plane_i.getCentroid ()[0] + (0.5f * plane_i.getNormal ()[0]),
-//                                    plane_i.getCentroid ()[1] + (0.5f * plane_i.getNormal ()[1]),
-//                                    plane_i.getCentroid ()[2] + (0.5f * plane_i.getNormal ()[2]));
-//                viz.addArrow (pt2, pt1, Rf[i%10], Gf[i%10], Bf[i%10], false, name);
+//                pt1 = pcl::PointXYZ(patch_i.getCentroid ()[0], patch_i.getCentroid ()[1], patch_i.getCentroid ()[2]);
+//                pt2 = pcl::PointXYZ(patch_i.getCentroid ()[0] + (0.5f * patch_i.getNormal ()[0]),
+//                                    patch_i.getCentroid ()[1] + (0.5f * patch_i.getNormal ()[1]),
+//                                    patch_i.getCentroid ()[2] + (0.5f * patch_i.getNormal ()[2]));
+//                cloud_viewer_->addArrow (pt2, pt1, Rf[i%10], Gf[i%10], Bf[i%10], false, name);
 
-//                if ( !plane_i.getLabel ().empty () )
-//                  viz.addText3D (plane_i.getLabel (), pt2, 0.1, Rf[i%10], Gf[i%10], Bf[i%10], plane_i.getLabel ());
+//                if ( !patch_i.getLabel ().empty () )
+//                  cloud_viewer_->addText3D (patch_i.getLabel (), pt2, 0.1, Rf[i%10], Gf[i%10], Bf[i%10], patch_i.getLabel ());
 //                else
 //                {
 //                  sprintf (name, "n%u", static_cast<unsigned>(i));
-//                  viz.addText3D (name, pt2, 0.1, Rf[i%10], Gf[i%10], Bf[i%10], name);
+//                  cloud_viewer_->addText3D (name, pt2, 0.1, Rf[i%10], Gf[i%10], Bf[i%10], name);
 //                }
 
 //                sprintf (name, "approx_plane_%02d", int (i));
-//                viz.addPolygon<PointT> (plane_i.polygonContourPtr, 0.5 * R[i%10], 0.5 * G[i%10], 0.5 * B[i%10], name);
+//                cloud_viewer_->addPolygon<PointT> (patch_i.polygonContourPtr, 0.5 * R[i%10], 0.5 * G[i%10], 0.5 * B[i%10], name);
 //              }
 //            }
 //          }
@@ -235,8 +230,8 @@ namespace pcl
 
             if (pbmap_ptr_->pbmap_mutex_.try_lock ())// Render the data
             {     boost::mutex::scoped_lock lock (pbmap_ptr_->pbmap_mutex_);
-              viz.removeAllShapes ();
-              viz.removeAllPointClouds ();
+              cloud_viewer_->removeAllShapes ();
+              cloud_viewer_->removeAllPointClouds ();
 
               char name[1024];
 
@@ -249,63 +244,63 @@ namespace pcl
                   double radius = 0.1 * sqrt (pbmap_ptr_->patches_[i].areaVoxels);
                   //        cout << "radius " << radius << std::endl;
                   sprintf (name, "sphere%u", static_cast<unsigned>(i));
-                  viz.addSphere (center, radius, Rf[i%10], Gf[i%10], Bf[i%10], name);
+                  cloud_viewer_->addSphere (center, radius, Rf[i%10], Gf[i%10], Bf[i%10], name);
 
                   if( !pbmap_ptr_->patches_[i].getLabel ().empty () )
-                      viz.addText3D (pbmap_ptr_->patches_[i].getLabel (), center, 0.1, Rf[i%10], Gf[i%10], Bf[i%10], pbmap_ptr_->patches_[i].getLabel ());
+                      cloud_viewer_->addText3D (pbmap_ptr_->patches_[i].getLabel (), center, 0.1, Rf[i%10], Gf[i%10], Bf[i%10], pbmap_ptr_->patches_[i].getLabel ());
                   else
                   {
                     sprintf (name, "P%u", static_cast<unsigned>(i));
-                    viz.addText3D (name, center, 0.1, Rf[i%10], Gf[i%10], Bf[i%10], name);
+                    cloud_viewer_->addText3D (name, center, 0.1, Rf[i%10], Gf[i%10], Bf[i%10], name);
                   }
 
-                  for (map<unsigned,unsigned>::iterator it = pbmap_ptr_->patches_[i].neighborPlanes.begin(); it != pbmap_ptr_->patches_[i].neighborPlanes.end(); it++)
+                  for (std::map<unsigned,unsigned>::iterator it = pbmap_ptr_->patches_[i].neighborPlanes.begin(); it != pbmap_ptr_->patches_[i].neighborPlanes.end(); it++)
                   {
                     if (it->first > pbmap_ptr_->patches_[i].id)
                       break;
 
                     sprintf (name, "common_observations%u_%u", static_cast<unsigned>(i), static_cast<unsigned> (it->first));
                     pcl::PointXYZ center_it (2*pbmap_ptr_->patches_[it->first].getCentroid ()[0], 2*pbmap_ptr_->patches_[it->first].getCentroid ()[1], 2*pbmap_ptr_->patches_[it->first].getCentroid ()[2]);
-                    viz.addLine (center, center_it, Rf[i%10], Gf[i%10], Bf[i%10], name);
+                    cloud_viewer_->addLine (center, center_it, Rf[i%10], Gf[i%10], Bf[i%10], name);
 
                     sprintf (name, "edge%u_%u", static_cast<unsigned>(i), static_cast<unsigned>(it->first));
                     char common_observations[8];
                     sprintf (common_observations, "%u", it->second);
                     pcl::PointXYZ half_edge ( (center_it.x+center.x)/2, (center_it.y+center.y)/2, (center_it.z+center.z)/2 );
-                    viz.addText3D (common_observations, half_edge, 0.05, 1.0, 1.0, 1.0, name);
+                    cloud_viewer_->addText3D (common_observations, half_edge, 0.05, 1.0, 1.0, 1.0, name);
                   }
                 }
               }
               else
               { // Regular representation
-                if (!viz.updatePointCloud (pbmap_ptr_->point_cloud_, "cloud"))
-                  viz.addPointCloud (pbmap_ptr_->point_cloud_, "cloud");
+                if (!cloud_viewer_->updatePointCloud (pbmap_ptr_->point_cloud_, "cloud"))
+                  cloud_viewer_->addPointCloud (pbmap_ptr_->point_cloud_, "cloud");
 
                 sprintf (name, "PointCloud size %u", static_cast<unsigned>( pbmap_ptr_->point_cloud_->size() ) );
-                viz.addText(name, 10, 20);
+                cloud_viewer_->addText(name, 10, 20);
 
                 for (size_t i=0; i<pbmap_ptr_->patches_.size(); i++)
                 {
-                  Plane &plane_i = pbmap_ptr_->patches_[i];
-          //        sprintf (name, "normal_%u", static_cast<unsigned>(i));
-                  name[0] = *(mrpt::format("normal_%u", static_cast<unsigned>(i)).c_str());
+                  pcl::pbmap::PlanarPatch<PointT> &patch_i = pbmap_ptr_->patches_[i];
+                  sprintf (name, "normal_%u", static_cast<unsigned>(i));
+                  //name[0] = *(mrpt::format("normal_%u", static_cast<unsigned>(i)).c_str());
                   pcl::PointXYZ pt1, pt2; // Begin and end points of normal's arrow for visualization
-                  pt1 = pcl::PointXYZ(plane_i.getCentroid ()[0], plane_i.getCentroid ()[1], plane_i.getCentroid ()[2]);
-                  pt2 = pcl::PointXYZ(plane_i.getCentroid ()[0] + (0.5f * plane_i.getNormal ()[0]),
-                                      plane_i.getCentroid ()[1] + (0.5f * plane_i.getNormal ()[1]),
-                                      plane_i.getCentroid ()[2] + (0.5f * plane_i.getNormal ()[2]));
-                  viz.addArrow (pt2, pt1, Rf[i%10], Gf[i%10], Bf[i%10], false, name);
+                  pt1 = pcl::PointXYZ(patch_i.getCentroid ()[0], patch_i.getCentroid ()[1], patch_i.getCentroid ()[2]);
+                  pt2 = pcl::PointXYZ(patch_i.getCentroid ()[0] + (0.5f * patch_i.getNormal ()[0]),
+                                      patch_i.getCentroid ()[1] + (0.5f * patch_i.getNormal ()[1]),
+                                      patch_i.getCentroid ()[2] + (0.5f * patch_i.getNormal ()[2]));
+                  cloud_viewer_->addArrow (pt2, pt1, Rf[i%10], Gf[i%10], Bf[i%10], false, name);
 
-                  if ( !plane_i.getLabel ().empty () )
-                    viz.addText3D (plane_i.getLabel (), pt2, 0.1, Rf[i%10], Gf[i%10], Bf[i%10], plane_i.getLabel ());
+                  if ( !patch_i.getLabel ().empty () )
+                    cloud_viewer_->addText3D (patch_i.getLabel (), pt2, 0.1, Rf[i%10], Gf[i%10], Bf[i%10], patch_i.getLabel ());
                   else
                   {
                     sprintf (name, "n%u", static_cast<unsigned>(i));
-                    viz.addText3D (name, pt2, 0.1, Rf[i%10], Gf[i%10], Bf[i%10], name);
+                    cloud_viewer_->addText3D (name, pt2, 0.1, Rf[i%10], Gf[i%10], Bf[i%10], name);
                   }
 
                   sprintf (name, "approx_plane_%02d", int (i));
-                  viz.addPolygon<PointT> (plane_i.polygonContourPtr, 0.5 * R[i%10], 0.5 * G[i%10], 0.5 * B[i%10], name);
+                  cloud_viewer_->addPolygon<PointT> (patch_i.polygonContourPtr, 0.5 * R[i%10], 0.5 * G[i%10], 0.5 * B[i%10], name);
                 }
               }
             }
