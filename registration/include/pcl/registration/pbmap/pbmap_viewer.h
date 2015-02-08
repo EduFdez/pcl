@@ -73,9 +73,9 @@ namespace pcl
         PbMapViewer() :
             cloud_viewer_ (new pcl::visualization::PCLVisualizer ("PbMap")),
             pbmap_ptr_ ( new pcl::pbmap::PbMap<PointT> ),
-            show_cloud_ (true),
+            show_pbmap_ (true),
             show_cloud_ (false),
-            show_cloud_ (false)
+            show_graph_ (false)
         {
         }
 
@@ -83,9 +83,9 @@ namespace pcl
         PbMapViewer(const typename pcl::pbmap::PbMap<PointT>::Ptr & pbm) :
             cloud_viewer_ (new pcl::visualization::PCLVisualizer ("PbMap")),
             pbmap_ptr_ (pbm),
-            show_cloud_ (true),
+            show_pbmap_ (true),
             show_cloud_ (false),
-            show_cloud_ (false)
+            show_graph_ (false)
         {
         }
 

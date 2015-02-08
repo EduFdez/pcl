@@ -51,6 +51,7 @@
 #include "pcl/io/openni2/openni.h"
 
 #include <pcl/io/io.h>
+#include <pcl/io/pcd_io.h>
 #include <pcl/common/time.h>
 #include <pcl/features/integral_image_normal.h>
 #include <pcl/features/normal_3d.h>
@@ -130,8 +131,8 @@ public:
   typedef typename Cloud::ConstPtr CloudConstPtr;
 
   OpenNI2Viewer (pcl::io::OpenNI2Grabber& grabber)
-    : cloud_viewer_ (new pcl::visualization::PCLVisualizer ("PCL OpenNI2 cloud"))
-    , image_viewer_ ()
+    : //cloud_viewer_ (new pcl::visualization::PCLVisualizer ("PCL OpenNI2 cloud"))
+     image_viewer_ ()
     , exit_viewer_(false)
     , grabber_ (grabber)
     , rgb_data_ (0), rgb_data_size_ (0)
@@ -194,9 +195,9 @@ public:
   void
   run ()
   {
-    cloud_viewer_->registerMouseCallback (&OpenNI2Viewer::mouse_callback, *this);
-    cloud_viewer_->registerKeyboardCallback (&OpenNI2Viewer::keyboard_callback, *this);
-    cloud_viewer_->setCameraFieldOfView (1.02259994f);
+//    cloud_viewer_->registerMouseCallback (&OpenNI2Viewer::mouse_callback, *this);
+//    cloud_viewer_->registerKeyboardCallback (&OpenNI2Viewer::keyboard_callback, *this);
+//    cloud_viewer_->setCameraFieldOfView (1.02259994f);
     boost::function<void (const CloudConstPtr&) > cloud_cb = boost::bind (&OpenNI2Viewer::cloud_callback, this, _1);
     boost::signals2::connection cloud_connection = grabber_.registerCallback (cloud_cb);
 
@@ -214,12 +215,13 @@ public:
 
     grabber_.start ();
 
-    while (!cloud_viewer_->wasStopped () && (image_viewer_ && !image_viewer_->wasStopped ()))
+    while (image_viewer_ && !image_viewer_->wasStopped ())
+    //while (!cloud_viewer_->wasStopped () && (image_viewer_ && !image_viewer_->wasStopped ()))
     {
       boost::shared_ptr<pcl::io::openni2::Image> image;
       CloudConstPtr cloud;
 
-      cloud_viewer_->spinOnce ();
+//      cloud_viewer_->spinOnce ();
 
       // See if we can get a cloud
       if (cloud_mutex_.try_lock ())
@@ -228,27 +230,27 @@ public:
         cloud_mutex_.unlock ();
       }
 
-      if (cloud)
-      {
-        FPS_CALC("drawing cloud");
+//      if (cloud)
+//      {
+//        FPS_CALC("drawing cloud");
 
-        if (!cloud_init)
-        {
-          cloud_viewer_->setPosition (0, 0);
-          cloud_viewer_->setSize (cloud->width, cloud->height);
-          cloud_init = !cloud_init;
-        }
+//        if (!cloud_init)
+//        {
+//          cloud_viewer_->setPosition (0, 0);
+//          cloud_viewer_->setSize (cloud->width, cloud->height);
+//          cloud_init = !cloud_init;
+//        }
 
-        if (!cloud_viewer_->updatePointCloud (cloud, "OpenNICloud"))
-        {
-          cloud_viewer_->addPointCloud (cloud, "OpenNICloud");
-          cloud_viewer_->resetCameraViewpoint ("OpenNICloud");
-          cloud_viewer_->setCameraPosition (
-            0,0,0,		// Position
-            0,0,1,		// Viewpoint
-            0,-1,0);	// Up
-        }
-      }
+//        if (!cloud_viewer_->updatePointCloud (cloud, "OpenNICloud"))
+//        {
+//          cloud_viewer_->addPointCloud (cloud, "OpenNICloud");
+//          cloud_viewer_->resetCameraViewpoint ("OpenNICloud");
+//          cloud_viewer_->setCameraPosition (
+//            0,0,0,		// Position
+//            0,0,1,		// Viewpoint
+//            0,-1,0);	// Up
+//        }
+//      }
 
       // See if we can get an image
       if (image_mutex_.try_lock ())
@@ -286,7 +288,7 @@ public:
     exit_viewer_ = true;
   }
 
-  boost::shared_ptr<pcl::visualization::PCLVisualizer> cloud_viewer_;
+//  boost::shared_ptr<pcl::visualization::PCLVisualizer> cloud_viewer_;
   boost::shared_ptr<pcl::visualization::ImageViewer> image_viewer_;
   bool exit_viewer_;
 
@@ -311,53 +313,53 @@ main (int argc, char** argv)
   std::string device_id ("");
   pcl::io::OpenNI2Grabber::Mode depth_mode = pcl::io::OpenNI2Grabber::OpenNI_Default_Mode;
   pcl::io::OpenNI2Grabber::Mode image_mode = pcl::io::OpenNI2Grabber::OpenNI_Default_Mode;
-  bool xyz = false;
+//  bool xyz = false;
 
-  if (argc >= 2)
-  {
-    device_id = argv[1];
-    if (device_id == "--help" || device_id == "-h")
-    {
-      printHelp (argc, argv);
-      return 0;
-    }
-    else if (device_id == "-l")
-    {
-      if (argc >= 3)
-      {
-        pcl::io::OpenNI2Grabber grabber (argv[2]);
-        boost::shared_ptr<pcl::io::openni2::OpenNI2Device> device = grabber.getDevice ();
-        cout << *device;		// Prints out all sensor data, including supported video modes
-      }
-      else
-      {
-        boost::shared_ptr<pcl::io::openni2::OpenNI2DeviceManager> deviceManager = pcl::io::openni2::OpenNI2DeviceManager::getInstance ();
-        if (deviceManager->getNumOfConnectedDevices () > 0)
-        {
-          for (unsigned deviceIdx = 0; deviceIdx < deviceManager->getNumOfConnectedDevices (); ++deviceIdx)
-          {
-            boost::shared_ptr<pcl::io::openni2::OpenNI2Device> device = deviceManager->getDeviceByIndex (deviceIdx);
-            cout << "Device " << device->getStringID () << "connected." << endl;
-          }
+//  if (argc >= 2)
+//  {
+//    device_id = argv[1];
+//    if (device_id == "--help" || device_id == "-h")
+//    {
+//      printHelp (argc, argv);
+//      return 0;
+//    }
+//    else if (device_id == "-l")
+//    {
+//      if (argc >= 3)
+//      {
+//        pcl::io::OpenNI2Grabber grabber (argv[2]);
+//        boost::shared_ptr<pcl::io::openni2::OpenNI2Device> device = grabber.getDevice ();
+//        cout << *device;		// Prints out all sensor data, including supported video modes
+//      }
+//      else
+//      {
+//        boost::shared_ptr<pcl::io::openni2::OpenNI2DeviceManager> deviceManager = pcl::io::openni2::OpenNI2DeviceManager::getInstance ();
+//        if (deviceManager->getNumOfConnectedDevices () > 0)
+//        {
+//          for (unsigned deviceIdx = 0; deviceIdx < deviceManager->getNumOfConnectedDevices (); ++deviceIdx)
+//          {
+//            boost::shared_ptr<pcl::io::openni2::OpenNI2Device> device = deviceManager->getDeviceByIndex (deviceIdx);
+//            cout << "Device " << device->getStringID () << "connected." << endl;
+//          }
 
-        }
-        else
-          cout << "No devices connected." << endl;
+//        }
+//        else
+//          cout << "No devices connected." << endl;
 
-        cout <<"Virtual Devices available: ONI player" << endl;
-      }
-      return 0;
-    }
-  }
-  else
-  {
-    boost::shared_ptr<pcl::io::openni2::OpenNI2DeviceManager> deviceManager = pcl::io::openni2::OpenNI2DeviceManager::getInstance ();
-    if (deviceManager->getNumOfConnectedDevices () > 0)
-    {
-      boost::shared_ptr<pcl::io::openni2::OpenNI2Device> device = deviceManager->getAnyDevice ();
-      cout << "Device ID not set, using default device: " << device->getStringID () << endl;
-    }
-  }
+//        cout <<"Virtual Devices available: ONI player" << endl;
+//      }
+//      return 0;
+//    }
+//  }
+//  else
+//  {
+//    boost::shared_ptr<pcl::io::openni2::OpenNI2DeviceManager> deviceManager = pcl::io::openni2::OpenNI2DeviceManager::getInstance ();
+//    if (deviceManager->getNumOfConnectedDevices () > 0)
+//    {
+//      boost::shared_ptr<pcl::io::openni2::OpenNI2Device> device = deviceManager->getAnyDevice ();
+//      cout << "Device ID not set, using default device: " << device->getStringID () << endl;
+//    }
+//  }
 
   unsigned mode;
   if (pcl::console::parse (argc, argv, "-depthmode", mode) != -1)
@@ -366,45 +368,58 @@ main (int argc, char** argv)
   if (pcl::console::parse (argc, argv, "-imagemode", mode) != -1)
     image_mode = pcl::io::OpenNI2Grabber::Mode (mode);
 
-  if (pcl::console::find_argument (argc, argv, "-xyz") != -1)
-    xyz = true;
-
   pcl::io::OpenNI2Grabber grabber (device_id, depth_mode, image_mode);
 
-  if (xyz || !grabber.providesCallback<pcl::io::OpenNI2Grabber::sig_cb_openni_point_cloud_rgb> ())
-  {
-    OpenNI2Viewer<pcl::PointXYZ> openni_viewer (grabber);
-    openni_viewer.run ();
-  }
-  else
+//  if (pcl::console::find_argument (argc, argv, "-xyz") != -1)
+//    xyz = true;
+
+//  if (xyz || !grabber.providesCallback<pcl::io::OpenNI2Grabber::sig_cb_openni_point_cloud_rgb> ())
+//  {
+//    OpenNI2Viewer<pcl::PointXYZ> openni_viewer (grabber);
+//    openni_viewer.run ();
+//  }
+//  else
   {
     OpenNI2Viewer<pcl::PointXYZRGBA> openni_viewer (grabber);
     //openni_viewer.run ();
 
     boost::thread openni2_grabber_viewer ( &OpenNI2Viewer<pcl::PointXYZRGBA>::run, &openni_viewer );
     std::cout << "OpenNI2 grabber and viewer started...\n";
-    std::cout << "Viewer " << !openni_viewer.cloud_viewer_->wasStopped () << "\n\n";
+    std::cout << "Viewer " << !openni_viewer.exit_viewer_ << "\n\n";
 
     //pcl::PointCloud<PointT>::Ptr cloud;
 
     pcl::pbmap::PbMap<PointT> pbmap;
+    pcl::pbmap::PbMapViewer<PointT> pbm_viewer;
+
     //PbMapConstruction pbmap_maker;
     pcl::PointCloud<PointT>::Ptr cloud (new pcl::PointCloud<PointT>);
     Eigen::Matrix4f pose = Eigen::Matrix4f::Identity();
 
+    std::cout << "openni_pbmap_construction \n";
+
+    // The current PbMap construction tool
     while ( !openni_viewer.exit_viewer_ )
       {
-        {
-          boost::mutex::scoped_lock lock (openni_viewer.cloud_mutex_);
-          pcl::copyPointCloud (*openni_viewer.cloud_, *cloud);
-        }
+//        {
+//          boost::mutex::scoped_lock lock (openni_viewer.cloud_mutex_);
+//          pcl::copyPointCloud (*openni_viewer.cloud_, *cloud);
+//        }
 
+        //pcl::io::loadPCDFile (argv[1], *cloud);
+        //PCDOrganizedMultiPlaneSegmentation<PointT> multi_plane_app (cloud, refine);
+
+        //        getNewPatches ( const pcl::PointCloud<PointT>::Ptr &point_cloud_arg,
+        //                        const Eigen::Matrix4f & pose,
+        //                        const double threshold_dist,
+        //                        const double threshold_angle,
+        //                        const double threshold_inliers )
 
         boost::this_thread::sleep (boost::posix_time::milliseconds (1));
       }
 
 
-    std::cout << "Viewer " << !openni_viewer.cloud_viewer_->wasStopped () << " " << !openni_viewer.exit_viewer_ << "\n";
+    std::cout << "Viewer " << !openni_viewer.image_viewer_->wasStopped () << " " << !openni_viewer.exit_viewer_ << "\n";
     std::cout << "EXIT program\n\n";
 
     openni2_grabber_viewer.join ();
