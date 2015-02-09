@@ -77,7 +77,7 @@ namespace pcl
         float hue_threshold;
 
         // [plane_segmentation]
-        float threshold_dist; // Maximum distance to the plane between neighbor 3D-points
+        float threshold_dist_; // Maximum distance to the plane between neighbor 3D-points
         float angle_threshold; //  = 0.017453 * 4.0 // Maximum angle between contiguous 3D-points
         float min_inliersRate; // Minimum ratio of inliers/image points required
 
@@ -148,22 +148,38 @@ namespace pcl
         boost::mutex pbmap_mutex_;
 
         /** \brief Empty constructor. */
-        PbMap() :
+        PbMap () :
             point_cloud_ ( new pcl::PointCloud<pcl::PointXYZRGBA>() ),
-            floor_plane_(-1)
+            floor_plane_ (-1)
         {
         }
+
+        /** \brief Get the point cloud. */
+        typename pcl::PointCloud<PointT>::Ptr getPointCloud () const
+        {
+            return point_cloud_;
+        };
+
+//        /** \brief The input point cloud for plane segmentation. */
+//        typename pcl::PointCloud<PointT>::ConstPtr input_;
+
+        /** \brief Set the point cloud. */
+        void setPointCloud (typename pcl::PointCloud<PointT>::Ptr &cloud_arg)
+        {
+            //          pcl::copyPointCloud (*openni_viewer.cloud_, *cloud);
+            point_cloud_ = cloud_arg;
+        };
 
         /** \brief Merge this PbMap with
           * \param[in] pbmap input PbMap, which has the coordinate system given by
           * \param[in] Rt affine transformation
           */
         void
-        Merge(PbMap &pbm, const Eigen::Matrix4f &Rt);
+        Merge (PbMap &pbm, const Eigen::Matrix4f &Rt);
 
 /*
         void
-        updateProximityGraph(Plane &plane, float proximity)
+        updateProximityGraph (Plane &plane, float proximity)
         {
           for(unsigned i=0; i < patches_.size(); i++ )
           {
@@ -182,23 +198,40 @@ namespace pcl
         }
 */
 
-//        /** \brief Segment planar patches from the input point cloud and add them to the current PbMap according to their relative pose
-//          * \param[in] point_cloud_arg input point cloud
-//          * \param[in] pose of the input cloud with respect to the current PbMap
-//          * \param[in] threshold_dist for segmentation
-//          * \param[in] threshold_angle for segmentation
-//          * \param[in] threshold_inliers for segmentation
-//          */
-//        void
-//        getNewPatches ( const pcl::PointCloud<PointT>::Ptr &point_cloud_arg,
-//                        const Eigen::Matrix4f & pose,
-//                        const double threshold_dist,
-//                        const double threshold_angle,
-//                        const double threshold_inliers )
-//        {
-//          boost::mutex::scoped_lock updateLock(mtx_pbmap_busy);
+        double threshold_dist_;
+        double threshold_angle_;
+        double threshold_inliers_;
 
-//          unsigned min_inliers = threshold_inliers * point_cloud_arg->size ();
+        /** \brief Set segmentation threshold. */
+        inline void setDistanceThreshold ( const double & threshold )
+        {
+            threshold_dist_ = threshold;
+        };
+
+        /** \brief Set segmentation threshold. */
+        inline void setAngleThreshold ( const double & threshold )
+        {
+            threshold_angle_ = threshold;
+        };
+
+        /** \brief Set segmentation threshold. */
+        inline void setInliersThreshold ( const double & threshold )
+        {
+            threshold_inliers_ = threshold;
+        };
+
+
+        /** \brief Segment planar patches from the input point cloud and add them to the current PbMap according to their relative pose
+          * \param[in] point_cloud_arg input point cloud
+          * \param[in] pose of the input cloud with respect to the current PbMap
+          */
+        void
+        segmentPatches (const typename pcl::PointCloud<PointT>::ConstPtr & point_cloud_arg,
+                        const Eigen::Matrix4f & pose)
+        {
+//          boost::mutex::scoped_lock updateLock (mtx_pbmap_busy_);
+
+//          unsigned min_inliers = threshold_inliers_ * point_cloud_arg->size ();
 
 //          #ifdef _VERBOSE
 //            std::cout << "detectPlanes in a cloud with " << point_cloud_arg->size () << " points " << min_inliers << " min_inliers\n";
@@ -229,9 +262,9 @@ namespace pcl
 //          ne.setDepthDependentSmoothing (true);
 
 //          pcl::OrganizedMultiPlaneSegmentation<PointT, pcl::Normal, pcl::Label> mps;
-//          mps.setmin_inliers (min_inliers); // std::cout << "Params " << min_inliers << " " << threshold_angle << " " << threshold_dist << std::endl;
-//          mps.setAngularThreshold (threshold_angle); // (0.017453 * 2.0) // 3 degrees
-//          mps.setDistanceThreshold (threshold_dist); //2cm
+//          mps.setmin_inliers (min_inliers); // std::cout << "Params " << min_inliers << " " << threshold_angle_ << " " << threshold_dist_ << std::endl;
+//          mps.setAngularThreshold (threshold_angle_); // (0.017453 * 2.0) // 3 degrees
+//          mps.setDistanceThreshold (threshold_dist_); //2cm
 
 //          pcl::PointCloud<pcl::Normal>::Ptr normal_cloud (new pcl::PointCloud<pcl::Normal>);
 //          ne.setInputCloud (point_cloud_aux);
@@ -532,26 +565,26 @@ namespace pcl
 //              std::cout << "new_patchesCloud finished\n";
 //            #endif
 
-//        } // End getNewPatches ()
+        } // End segmentPatches ()
 
 //        /** \brief Check if the two input patches correspond to the same surface according to the input thresholds on orientation and proximity
 //          * \param[in] point_cloud_arg input point cloud
 //          * \param[in] pose of the input cloud with respect to the current PbMap
-//          * \param[in] threshold_dist for segmentation
-//          * \param[in] threshold_angle for segmentation
-//          * \param[in] threshold_inliers for segmentation
+//          * \param[in] threshold_dist_ for segmentation
+//          * \param[in] threshold_angle_ for segmentation
+//          * \param[in] threshold_inliers_ for segmentation
 //          */
 //        /*!Check if the the input plane is the same than this plane for some given angle and distance thresholds.
 //         * If the planes are the same they are merged in this and the function returns true. Otherwise it returns false.*/
 //        static bool
 //        is_same_surface (const pcl::pbmap::PlanarPatch & patch1,
 //                         const pcl::pbmap::PlanarPatch & patch2,
-//                         const float & threshold_angle_cos,
-//                         const float & threshold_dist,
+//                         const float & threshold_angle__cos,
+//                         const float & threshold_dist_,
 //                         const float & threshold_proximity )
 //        {
 //          // Check that both planes have similar orientation
-//          if ( patch1.getNormal ().dot (patch2.getNormal ()) < threshold_angle_cos )
+//          if ( patch1.getNormal ().dot (patch2.getNormal ()) < threshold_angle__cos )
 //            return false;
 
 //          // Check the normal distance of the planes centers using their average normal`
@@ -559,9 +592,9 @@ namespace pcl
 ////          if(fabs(dist_centroids) > 10 ) // Avoid matching planes which are fare away
 ////            return false;
 //          float dist_normal = patch1.getNormal ().dot( dist_centroids / dist_centroids.norm () );
-//        //  if(fabs(dist_normal) > threshold_dist ) // Avoid matching different parallel planes
+//        //  if(fabs(dist_normal) > threshold_dist_ ) // Avoid matching different parallel planes
 //        //    return false;
-//          float thres_max_dist = max(threshold_dist, threshold_dist*2*dist_centroids.norm ());
+//          float thres_max_dist = max(threshold_dist_, threshold_dist_*2*dist_centroids.norm ());
 //          if(fabs(dist_normal) > thres_max_dist ) // Avoid matching different parallel planes
 //            return false;
 

@@ -40,6 +40,7 @@
 //#include <pcl/io/openni2/openni2_device_manager.h>
 //#include <pcl/io/openni2/openni2_device.h>
 #include <pcl/visualization/pcl_visualizer.h>
+//#include <pcl/visualization/cloud_viewer.h>
 #include <pcl/visualization/boost.h>
 #include <pcl/visualization/image_viewer.h>
 #include <pcl/console/print.h>
@@ -128,12 +129,14 @@ class OpenNI2Viewer
 {
 public:
   typedef pcl::PointCloud<PointType> Cloud;
+  typedef typename Cloud::Ptr CloudPtr;
   typedef typename Cloud::ConstPtr CloudConstPtr;
 
   OpenNI2Viewer (pcl::io::OpenNI2Grabber& grabber)
-    : //cloud_viewer_ (new pcl::visualization::PCLVisualizer ("PCL OpenNI2 cloud"))
-     image_viewer_ ()
-    , exit_viewer_(false)
+//    : cloud_viewer_ (new pcl::visualization::PCLVisualizer ("PCL OpenNI2 cloud"))
+//    ,
+    : image_viewer_ ()
+    , viewer_on_(true)
     , grabber_ (grabber)
     , rgb_data_ (0), rgb_data_size_ (0)
   {
@@ -219,14 +222,15 @@ public:
     //while (!cloud_viewer_->wasStopped () && (image_viewer_ && !image_viewer_->wasStopped ()))
     {
       boost::shared_ptr<pcl::io::openni2::Image> image;
-      CloudConstPtr cloud;
+//      CloudConstPtr cloud;
 
 //      cloud_viewer_->spinOnce ();
 
       // See if we can get a cloud
       if (cloud_mutex_.try_lock ())
       {
-        cloud_.swap (cloud);
+        //cloud_.swap (cloud);
+        cloud_.swap (cloud_current_);
         cloud_mutex_.unlock ();
       }
 
@@ -262,10 +266,11 @@ public:
 
       if (image)
       {
-        if (!image_init && cloud && cloud->width != 0)
+        //if (!image_init && cloud && cloud->width != 0)
+        if (!image_init && image->getWidth () != 0)
         {
-          image_viewer_->setPosition (cloud->width, 0);
-          image_viewer_->setSize (cloud->width, cloud->height);
+          image_viewer_->setPosition (image->getWidth (), 0);
+          image_viewer_->setSize (image->getWidth (), image->getHeight () );
           image_init = !image_init;
         }
 
@@ -285,26 +290,27 @@ public:
     if (rgb_data_)
       delete[] rgb_data_;
 
-    exit_viewer_ = true;
+    viewer_on_ = false;
   }
 
-//  boost::shared_ptr<pcl::visualization::PCLVisualizer> cloud_viewer_;
+  //boost::shared_ptr<pcl::visualization::PCLVisualizer> cloud_viewer_;
   boost::shared_ptr<pcl::visualization::ImageViewer> image_viewer_;
-  bool exit_viewer_;
+  bool viewer_on_;
 
   pcl::io::OpenNI2Grabber& grabber_;
   boost::mutex cloud_mutex_;
   boost::mutex image_mutex_;
 
   CloudConstPtr cloud_;
+  CloudConstPtr cloud_current_;
   boost::shared_ptr<pcl::io::openni2::Image> image_;
   unsigned char* rgb_data_;
   unsigned rgb_data_size_;
 };
 
-// Create the PCLVisualizer object
-boost::shared_ptr<pcl::visualization::PCLVisualizer> cld;
-boost::shared_ptr<pcl::visualization::ImageViewer> img;
+//// Create the PCLVisualizer object
+//boost::shared_ptr<pcl::visualization::PCLVisualizer> cld;
+//boost::shared_ptr<pcl::visualization::ImageViewer> img;
 
 /* ---[ */
 int
@@ -382,44 +388,111 @@ main (int argc, char** argv)
   {
     OpenNI2Viewer<pcl::PointXYZRGBA> openni_viewer (grabber);
     //openni_viewer.run ();
-
     boost::thread openni2_grabber_viewer ( &OpenNI2Viewer<pcl::PointXYZRGBA>::run, &openni_viewer );
     std::cout << "OpenNI2 grabber and viewer started...\n";
-    std::cout << "Viewer " << !openni_viewer.exit_viewer_ << "\n\n";
+    std::cout << "Viewer " << openni_viewer.viewer_on_ << "\n\n";
 
     //pcl::PointCloud<PointT>::Ptr cloud;
 
-    pcl::pbmap::PbMap<PointT> pbmap;
-    pcl::pbmap::PbMapViewer<PointT> pbm_viewer;
+//    //PbMapConstruction;
+//    pcl::pbmap::PbMap<PointT> pbmap;
+//    pcl::pbmap::PbMapViewer<PointT> pbm_viewer;
+//    pcl::PointCloud<PointT>::Ptr cloud (new pcl::PointCloud<PointT>);
+//    Eigen::Matrix4f pose = Eigen::Matrix4f::Identity();
+//    std::cout << "openni_pbmap_construction \n";
 
-    //PbMapConstruction pbmap_maker;
-    pcl::PointCloud<PointT>::Ptr cloud (new pcl::PointCloud<PointT>);
-    Eigen::Matrix4f pose = Eigen::Matrix4f::Identity();
+//    pcl::visualization::CloudViewer viewer ("Simple Cloud Viewer");
+//    viewer.showCloud (openni_viewer.cloud_);
+//    while (!viewer.wasStopped ())
+//    {
+//      boost::this_thread::sleep (boost::posix_time::milliseconds (1));
+//    }
 
-    std::cout << "openni_pbmap_construction \n";
+    boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer ("PCL OpenNI2 cloud"));
+//    viewer->setPosition (0, 0);
+//    viewer->setSize (640, 480);
+////    viewer->addPointCloud<PointT> (cloud, single_color, "cloud");
+//    viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "cloud");
+//    viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_OPACITY, 0.15, "cloud");
+//    viewer->addCoordinateSystem (1.0, "global");
+//    viewer->initCameraParameters ();
+    viewer->setBackgroundColor (0.1, 0.1, 0.1);
+    while ( openni_viewer.viewer_on_ )
+    {
 
-    // The current PbMap construction tool
-    while ( !openni_viewer.exit_viewer_ )
+//      cloud_viewer_->spinOnce ();
+
+//      if (openni_viewer.cloud)
+      if (openni_viewer.cloud_current_)
       {
+        FPS_CALC("drawing cloud");
+
+         // std::cout << "Pts current " << openni_viewer.cloud_->points.size() << std::endl;
+
+        if (openni_viewer.cloud_mutex_.try_lock ())
+        {
+            std::cout << "Pts current " << openni_viewer.cloud_current_->points.size() << std::endl;
+//            pcl::io::savePCDFile ("/home/efernand/cloud_test.pcd", *openni_viewer.cloud_current_);
+
+            if (!viewer->updatePointCloud (openni_viewer.cloud_current_, "OpenNICloud"))
+            {
+              viewer->addPointCloud (openni_viewer.cloud_current_, "OpenNICloud");
+//              viewer->resetCameraViewpoint ("OpenNICloud");
+//              viewer->setCameraPosition (
+//                0,0,0,		// Position
+//                0,0,1,		// Viewpoint
+//                0,-1,0);	// Up
+            }
+            openni_viewer.cloud_mutex_.unlock ();
+        }
+      }
+
+//        pcl::PointCloud<PointT>::ConstPtr cloud;
 //        {
 //          boost::mutex::scoped_lock lock (openni_viewer.cloud_mutex_);
-//          pcl::copyPointCloud (*openni_viewer.cloud_, *cloud);
+//          openni_viewer.cloud_.swap (cloud);
+
+//          std::cout << "Pts " << cloud->points.size() << std::endl;
+//          //pcl::copyPointCloud (*openni_viewer.cloud_, *cloud);
 //        }
+
+//        pcl::PointCloud<PointT>::ConstPtr cloud;
+//        pcl::PointCloud<PointT>::Ptr cloud_curr(new pcl::PointCloud<PointT>);
+
+  //      cloud_viewer_->spinOnce ();
+
+//        // See if we can get a cloud
+//        if (openni_viewer.cloud_mutex_.try_lock ())
+//        {
+//          openni_viewer.cloud_.swap (cloud);
+//          openni_viewer.cloud_mutex_.unlock ();
+
+//          //pbmap.point_cloud_ = cloud;
+////          pbmap.setPointCloud(cloud);
+
+////          pcl::copyPointCloud (*cloud, *cloud_curr);
+////          //std::cout << "Pt val " << cloud_curr->points[1000].x << std::endl;
+////          std::cout << "Pt val " << cloud->points[1000].x << std::endl;
+////          std::cout << "Pt val " << openni_viewer.cloud_->points[1000].x << std::endl;
+////          std::cout << "Pts " << openni_viewer.cloud_->points.size() << std::endl;
+////          std::cout << "Pts " << cloud->points.size() << std::endl;
+
+////          cloud_curr->points[0].x = 1000;
+////          std::cout << "Pt val " << cloud_curr->points[0].x << " " << cloud->points[0].x << " " << openni_viewer.cloud_->points[0].x << std::endl;
+//        }
+
 
         //pcl::io::loadPCDFile (argv[1], *cloud);
         //PCDOrganizedMultiPlaneSegmentation<PointT> multi_plane_app (cloud, refine);
 
-        //        getNewPatches ( const pcl::PointCloud<PointT>::Ptr &point_cloud_arg,
-        //                        const Eigen::Matrix4f & pose,
-        //                        const double threshold_dist,
-        //                        const double threshold_angle,
-        //                        const double threshold_inliers )
+        //pbmap.getNewPatches (openni_viewer.cloud_, pose);
 
-        boost::this_thread::sleep (boost::posix_time::milliseconds (1));
+
+        boost::this_thread::sleep (boost::posix_time::milliseconds (10));
       }
 
 
-    std::cout << "Viewer " << !openni_viewer.image_viewer_->wasStopped () << " " << !openni_viewer.exit_viewer_ << "\n";
+    std::cout << "Viewer " << !openni_viewer.image_viewer_->wasStopped () << " " << openni_viewer.viewer_on_ << "\n";
     std::cout << "EXIT program\n\n";
 
     openni2_grabber_viewer.join ();

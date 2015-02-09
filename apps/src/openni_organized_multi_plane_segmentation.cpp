@@ -140,6 +140,10 @@ class OpenNIOrganizedMultiPlaneSegmentation
       {
         viewer->spinOnce (100);
 
+//        viewer->getCameraParameters ("/home/efernand/pcl_cam_params");
+//        viewer->loadCameraParameters ("/home/efernand/pcl_cam_params");
+        std::cout << "Pt 153920 " << prev_cloud->points[153920].z << " \n";
+
         if (prev_cloud && cloud_mutex.try_lock ())
         {
           regions.clear ();

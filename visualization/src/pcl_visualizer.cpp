@@ -1628,11 +1628,11 @@ pcl::visualization::PCLVisualizer::initCameraParameters ()
   // Position the camera at the origin
   camera_temp.pos[0] = 0.;
   camera_temp.pos[1] = 0.;
-  camera_temp.pos[2] = 0.;
+  camera_temp.pos[2] = -2.5;
 
   // Set the up-vector of the camera to be the y-axis
   camera_temp.view[0] = 0.;
-  camera_temp.view[1] = 1.;
+  camera_temp.view[1] = -1.;
   camera_temp.view[2] = 0.;
 
   // Set the camera field of view to about

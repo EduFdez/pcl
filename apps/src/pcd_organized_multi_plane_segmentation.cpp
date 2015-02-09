@@ -159,8 +159,9 @@ class PCDOrganizedMultiPlaneSegmentation
       viewer.removeAllPointClouds (0);
       viewer.removeAllShapes (0);
       pcl::visualization::PointCloudColorHandlerCustom<PointT> single_color (cloud, 0, 255, 0);
-      viewer.addPointCloud<PointT> (cloud, single_color, "cloud");
-      
+//      viewer.addPointCloud<PointT> (cloud, single_color, "cloud");
+      viewer.addPointCloud<PointT> (cloud, "cloud");
+
       pcl::PlanarPolygon<PointT> approx_polygon;
       //Draw Visualization
       for (size_t i = 0; i < regions.size (); i++)

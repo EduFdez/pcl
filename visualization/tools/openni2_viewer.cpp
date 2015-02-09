@@ -121,6 +121,7 @@ public:
     , image_viewer_ ()
     , grabber_ (grabber)
     , rgb_data_ (0), rgb_data_size_ (0)
+    , viewer_on_(true)
   {
   }
 
@@ -174,6 +175,8 @@ public:
     }
   }
 
+  CloudConstPtr cloud;
+
   /**
   * @brief starts the main loop
   */
@@ -203,7 +206,7 @@ public:
     while (!cloud_viewer_->wasStopped () && (image_viewer_ && !image_viewer_->wasStopped ()))
     {
       boost::shared_ptr<pcl::io::openni2::Image> image;
-      CloudConstPtr cloud;
+//      CloudConstPtr cloud;
 
       cloud_viewer_->spinOnce ();
 
@@ -211,6 +214,7 @@ public:
       if (cloud_mutex_.try_lock ())
       {
         cloud_.swap (cloud);
+        std::cout << "Pt 153920 " << cloud->points[153920].z << " \n";
         cloud_mutex_.unlock ();
       }
 
@@ -220,8 +224,40 @@ public:
 
         if (!cloud_init)
         {
-          cloud_viewer_->setPosition (0, 0);
+          cloud_viewer_->setPosition (0, 500);
+          cloud_viewer_->setBackgroundColor (0.3, 0.3, 0.3);
           cloud_viewer_->setSize (cloud->width, cloud->height);
+          cloud_viewer_->addCoordinateSystem (1.0, "global");
+          cloud_viewer_->initCameraParameters ();
+//          {
+//          pcl::visualization::Camera camera_temp;
+//          // Set default camera parameters to something meaningful
+//          camera_temp.clip[0] = 0.8;
+//          camera_temp.clip[1] = 7.;
+
+//          // Look straight along the z-axis
+//          camera_temp.focal[0] = 0.;
+//          camera_temp.focal[1] = 0.;
+//          camera_temp.focal[2] = 1.;
+
+//          // Position the camera at the origin
+//          camera_temp.pos[0] = 0.;
+//          camera_temp.pos[1] = 0.;
+//          camera_temp.pos[2] = -2.;
+
+//          // Set the up-vector of the camera to be the y-axis
+//          camera_temp.view[0] = 0.;
+//          camera_temp.view[1] = 1.;
+//          camera_temp.view[2] = 0.;
+
+//          // Set the camera field of view to about
+//          camera_temp.fovy = 0.8575;
+
+//          camera_temp.window_size[0] = 800;
+//          camera_temp.window_size[1] = 800;
+
+//          cloud_viewer_->setCameraParameters (camera_temp);
+//          }
           cloud_init = !cloud_init;
         }
 
@@ -234,6 +270,11 @@ public:
             0,0,1,		// Viewpoint
             0,-1,0);	// Up
         }
+//        else
+//            std::cout << "\n NO CLOUD \n\n";
+
+        //std::cout << "Pts_ " << cloud_->points.size() << std::endl;
+        std::cout << "Pts " << cloud->points.size() << std::endl;
       }
 
       // See if we can get an image
@@ -268,10 +309,13 @@ public:
     image_connection.disconnect ();
     if (rgb_data_)
       delete[] rgb_data_;
+
+    viewer_on_ = false;
   }
 
   boost::shared_ptr<pcl::visualization::PCLVisualizer> cloud_viewer_;
   boost::shared_ptr<pcl::visualization::ImageViewer> image_viewer_;
+  bool viewer_on_;
 
   pcl::io::OpenNI2Grabber& grabber_;
   boost::mutex cloud_mutex_;
@@ -284,8 +328,8 @@ public:
 };
 
 // Create the PCLVisualizer object
-boost::shared_ptr<pcl::visualization::PCLVisualizer> cld;
-boost::shared_ptr<pcl::visualization::ImageViewer> img;
+//boost::shared_ptr<pcl::visualization::PCLVisualizer> cld;
+//boost::shared_ptr<pcl::visualization::ImageViewer> img;
 
 /* ---[ */
 int
@@ -362,7 +406,14 @@ main (int argc, char** argv)
   else
   {
     OpenNI2Viewer<pcl::PointXYZRGBA> openni_viewer (grabber);
-    openni_viewer.run ();
+    // openni_viewer.run ();
+    boost::thread openni2_grabber_viewer ( &OpenNI2Viewer<pcl::PointXYZRGBA>::run, &openni_viewer );
+
+    while ( openni_viewer.viewer_on_ )
+    {
+//        std::cout << "Pt 153920 " << openni_viewer.cloud_->points[153920].z << " \n";
+        boost::this_thread::sleep (boost::posix_time::milliseconds (1));
+    }
   }
 
   return (0);
