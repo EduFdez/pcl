@@ -33,6 +33,7 @@ if(build)
         "include/pcl/${SUBSYS_NAME}/correspondence_rejection_organized_boundary.h"
         "include/pcl/${SUBSYS_NAME}/correspondence_sorting.h"
         "include/pcl/${SUBSYS_NAME}/correspondence_types.h"
+        "include/pcl/${SUBSYS_NAME}/direct_rgbd_registration.h"
         "include/pcl/${SUBSYS_NAME}/ia_ransac.h"
         "include/pcl/${SUBSYS_NAME}/icp.h"
         "include/pcl/${SUBSYS_NAME}/joint_icp.h"
@@ -95,6 +96,7 @@ if(build)
         "include/pcl/${SUBSYS_NAME}/impl/correspondence_rejection_var_trimmed.hpp"
         "include/pcl/${SUBSYS_NAME}/impl/correspondence_rejection_organized_boundary.hpp"
         "include/pcl/${SUBSYS_NAME}/impl/correspondence_types.hpp"
+        "include/pcl/${SUBSYS_NAME}/impl/direct_rgbd_registration.hpp"
         "include/pcl/${SUBSYS_NAME}/impl/ia_ransac.hpp"
         "include/pcl/${SUBSYS_NAME}/impl/icp.hpp"
         "include/pcl/${SUBSYS_NAME}/impl/joint_icp.hpp"
@@ -143,6 +145,7 @@ if(build)
         src/ppf_registration.cpp
         src/pyramid_feature_matching.cpp
         #src/pairwise_graph_registration.cpp
+        src/direct_rgbd_registration.cpp
         src/ia_ransac.cpp
         src/icp.cpp
         src/joint_icp.cpp
