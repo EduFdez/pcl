@@ -214,13 +214,15 @@ class OpenNIViewer
           {
             cloud_viewer_->setPosition (0, 0);
             cloud_viewer_->setSize (cloud->width, cloud->height);
+            cloud_viewer_->setBackgroundColor (0.3, 0.3, 0.3);
             cloud_init = !cloud_init;
           }
 
           if (!cloud_viewer_->updatePointCloud (cloud, "OpenNICloud"))
           {
             cloud_viewer_->addPointCloud (cloud, "OpenNICloud");
-            cloud_viewer_->resetCameraViewpoint ("OpenNICloud");
+            cloud_viewer_->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.8, 0.2, 0.0, "OpenNICloud");
+            //cloud_viewer_->resetCameraViewpoint ("OpenNICloud");
           }          
         }
 

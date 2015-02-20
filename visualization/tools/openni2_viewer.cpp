@@ -264,11 +264,8 @@ public:
         if (!cloud_viewer_->updatePointCloud (cloud, "OpenNICloud"))
         {
           cloud_viewer_->addPointCloud (cloud, "OpenNICloud");
+          cloud_viewer_->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.8, 0.2, 0.0, "OpenNICloud");
           cloud_viewer_->resetCameraViewpoint ("OpenNICloud");
-          cloud_viewer_->setCameraPosition (
-            0,0,0,		// Position
-            0,0,1,		// Viewpoint
-            0,-1,0);	// Up
         }
 //        else
 //            std::cout << "\n NO CLOUD \n\n";
@@ -315,7 +312,6 @@ public:
 
   boost::shared_ptr<pcl::visualization::PCLVisualizer> cloud_viewer_;
   boost::shared_ptr<pcl::visualization::ImageViewer> image_viewer_;
-  bool viewer_on_;
 
   pcl::io::OpenNI2Grabber& grabber_;
   boost::mutex cloud_mutex_;
@@ -325,6 +321,8 @@ public:
   boost::shared_ptr<pcl::io::openni2::Image> image_;
   unsigned char* rgb_data_;
   unsigned rgb_data_size_;
+
+  bool viewer_on_;
 };
 
 // Create the PCLVisualizer object

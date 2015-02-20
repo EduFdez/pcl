@@ -401,65 +401,50 @@ main (int argc, char** argv)
 //    Eigen::Matrix4f pose = Eigen::Matrix4f::Identity();
 //    std::cout << "openni_pbmap_construction \n";
 
-//    pcl::visualization::CloudViewer viewer ("Simple Cloud Viewer");
-//    viewer.showCloud (openni_viewer.cloud_);
-//    while (!viewer.wasStopped ())
-//    {
-//      boost::this_thread::sleep (boost::posix_time::milliseconds (1));
-//    }
 
     boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer ("PCL OpenNI2 cloud"));
-//    viewer->setPosition (0, 0);
-//    viewer->setSize (640, 480);
-////    viewer->addPointCloud<PointT> (cloud, single_color, "cloud");
-//    viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "cloud");
-//    viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_OPACITY, 0.15, "cloud");
-//    viewer->addCoordinateSystem (1.0, "global");
-//    viewer->initCameraParameters ();
+    viewer->setPosition (0, 0);
+    viewer->setSize (640, 480);
     viewer->setBackgroundColor (0.1, 0.1, 0.1);
+    viewer->addCoordinateSystem (0.2, "global");
+//    //    viewer->initCameraParameters ();
+//////    viewer->addPointCloud<PointT> (cloud, single_color, "cloud");
+////    viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "cloud");
+////    viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_OPACITY, 0.15, "cloud");
+//      viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.9, 0.1, 0.1, "cloud");
+
     while ( openni_viewer.viewer_on_ )
     {
 
 //      cloud_viewer_->spinOnce ();
 
 //      if (openni_viewer.cloud)
-      if (openni_viewer.cloud_current_)
-      {
-        FPS_CALC("drawing cloud");
-
-         // std::cout << "Pts current " << openni_viewer.cloud_->points.size() << std::endl;
+//      if (openni_viewer.cloud_current_)
+//      {
+//        FPS_CALC("drawing cloud");
 
         if (openni_viewer.cloud_mutex_.try_lock ())
-        {
-            std::cout << "Pts current " << openni_viewer.cloud_current_->points.size() << std::endl;
-//            pcl::io::savePCDFile ("/home/efernand/cloud_test.pcd", *openni_viewer.cloud_current_);
+        { int a = 0;
 
-            if (!viewer->updatePointCloud (openni_viewer.cloud_current_, "OpenNICloud"))
-            {
-              viewer->addPointCloud (openni_viewer.cloud_current_, "OpenNICloud");
-//              viewer->resetCameraViewpoint ("OpenNICloud");
-//              viewer->setCameraPosition (
-//                0,0,0,		// Position
-//                0,0,1,		// Viewpoint
-//                0,-1,0);	// Up
-            }
-            openni_viewer.cloud_mutex_.unlock ();
+//          std::cout << "Pts current " << openni_viewer.cloud_->points.size() << std::endl;
+//          std::cout << " Pts current " << openni_viewer.cloud_current_->points.size() << std::endl;
+
+//////            pcl::io::savePCDFile ("/home/efernand/cloud_test.pcd", *openni_viewer.cloud_current_);
+
+//            if (!viewer->updatePointCloud (openni_viewer.cloud_current_, "OpenNICloud"))
+//            {
+//              viewer->addPointCloud (openni_viewer.cloud_current_, "OpenNICloud");
+////              viewer->resetCameraViewpoint ("OpenNICloud");
+//            }
+////            openni_viewer.cloud_mutex_.unlock ();
         }
-      }
+//      }
 
-//        pcl::PointCloud<PointT>::ConstPtr cloud;
-//        {
-//          boost::mutex::scoped_lock lock (openni_viewer.cloud_mutex_);
-//          openni_viewer.cloud_.swap (cloud);
-
-//          std::cout << "Pts " << cloud->points.size() << std::endl;
-//          //pcl::copyPointCloud (*openni_viewer.cloud_, *cloud);
-//        }
 
 //        pcl::PointCloud<PointT>::ConstPtr cloud;
 //        pcl::PointCloud<PointT>::Ptr cloud_curr(new pcl::PointCloud<PointT>);
 
-  //      cloud_viewer_->spinOnce ();
+  //      viewer_->spinOnce ();
 
 //        // See if we can get a cloud
 //        if (openni_viewer.cloud_mutex_.try_lock ())

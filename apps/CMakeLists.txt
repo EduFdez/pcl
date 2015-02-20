@@ -52,6 +52,9 @@ if(build)
     PCL_ADD_EXECUTABLE(pcl_pcd_organized_multi_plane_segmentation "${SUBSYS_NAME}" src/pcd_organized_multi_plane_segmentation.cpp)
     target_link_libraries(pcl_pcd_organized_multi_plane_segmentation pcl_common pcl_io pcl_filters pcl_visualization pcl_segmentation pcl_features)
 
+    PCL_ADD_EXECUTABLE(param_pcl_pcd_organized_multi_plane_segmentation "${SUBSYS_NAME}" src/pcd_organized_multi_plane_segmentation_param.cpp)
+    target_link_libraries(param_pcl_pcd_organized_multi_plane_segmentation pcl_common pcl_io pcl_filters pcl_visualization pcl_segmentation pcl_features)
+
     if (QHULL_FOUND)
         PCL_ADD_EXECUTABLE(pcl_pcd_select_object_plane "${SUBSYS_NAME}" src/pcd_select_object_plane.cpp)
         target_link_libraries(pcl_pcd_select_object_plane pcl_common pcl_io pcl_filters pcl_visualization pcl_segmentation pcl_features pcl_surface)
@@ -121,6 +124,9 @@ if(build)
 
       PCL_ADD_EXECUTABLE_OPT_BUNDLE(pcl_openni_organized_multi_plane_segmentation "${SUBSYS_NAME}" src/openni_organized_multi_plane_segmentation.cpp)
       target_link_libraries(pcl_openni_organized_multi_plane_segmentation pcl_common pcl_io pcl_filters pcl_visualization pcl_segmentation pcl_features)
+
+      PCL_ADD_EXECUTABLE_OPT_BUNDLE(param_pcl_openni_organized_multi_plane_segmentation "${SUBSYS_NAME}" src/openni_organized_multi_plane_segmentation_param.cpp)
+      target_link_libraries(param_pcl_openni_organized_multi_plane_segmentation pcl_common pcl_io pcl_filters pcl_visualization pcl_segmentation pcl_features)
 
       PCL_ADD_EXECUTABLE_OPT_BUNDLE(pcl_openni_pbmap_construction "${SUBSYS_NAME}" src/openni_pbmap_construction.cpp)
       target_link_libraries(pcl_openni_pbmap_construction pcl_common pcl_io pcl_filters pcl_visualization pcl_segmentation pcl_features pcl_registration)
